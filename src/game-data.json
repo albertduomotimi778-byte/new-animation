@@ -1,0 +1,76 @@
+{
+  "scenes": [
+    {
+      "id": "scene_1",
+      "name": "Scene 1"
+    }
+  ],
+  "sceneElements": {
+    "scene_1": [
+      {
+        "x": 406,
+        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+        "height": 50,
+        "url": null,
+        "buttonId": "btn_right",
+        "width": 50,
+        "layerId": "layer_1",
+        "y": 196,
+        "id": "el_1783399496429",
+        "type": "btn"
+      }
+    ]
+  },
+  "sceneEvents": {
+    "scene_1": [
+      {
+        "conditions": [
+          {
+            "target": "el_1783399496429",
+            "type": "pressed"
+          }
+        ],
+        "actions": [
+          {
+            "type": "js",
+            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });"
+          }
+        ],
+        "id": "ev_1"
+      }
+    ]
+  },
+  "gameObjects": [],
+  "uiButtons": [
+    {
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
+      "name": "Left Button",
+      "type": "shape",
+      "id": "btn_left"
+    },
+    {
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+      "type": "shape",
+      "name": "Right Button",
+      "id": "btn_right"
+    },
+    {
+      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png",
+      "id": "btn_jump",
+      "name": "Jump Button",
+      "type": "shape"
+    }
+  ],
+  "environments": [],
+  "layers": [
+    {
+      "id": "layer_1",
+      "name": "Base Layer"
+    }
+  ],
+  "stageBgColor": "#111111",
+  "aspectRatio": "landscape",
+  "activeSceneId": "scene_1",
+  "VIRTUAL_WIDTH": 640,
+  "VIRTUAL_HEIGHT": 360
+}
