@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Github, X, Check, Loader2, ExternalLink, Globe, Lock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -20,35 +20,72 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
   const [repoName, setRepoName] = useState(projectName.toLowerCase().replace(/\s+/g, '-'));
   const [description, setDescription] = useState('My awesome game created with Animato Studio');
   const [isPrivate, setIsPrivate] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'creating' | 'deploying' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'checking' | 'idle' | 'creating' | 'deploying' | 'success' | 'error'>('checking');
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [repoFullName, setRepoFullName] = useState<string | null>(null);
+  const [repoExists, setRepoExists] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      checkRepoExistence();
+    } else {
+      setStatus('checking');
+      setRepoExists(false);
+      setRepoFullName(null);
+    }
+  }, [isOpen, projectName]);
+
+  const checkRepoExistence = async () => {
+    setStatus('checking');
+    try {
+      const res = await fetch('/api/github/check-repo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, repoName })
+      });
+      const data = await res.json();
+      if (data.exists) {
+        setRepoExists(true);
+        setRepoFullName(data.repoFullName);
+      } else {
+        setRepoExists(false);
+      }
+      setStatus('idle');
+    } catch (err) {
+      setStatus('idle');
+    }
+  };
 
   const handleDeploy = async () => {
-    setStatus('creating');
+    setStatus(repoExists ? 'deploying' : 'creating');
     setError(null);
     setLogs([]);
     try {
-      // 1. Create Repository
-      const createRes = await fetch('/api/github/create-repo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: userEmail,
-          name: repoName,
-          description,
-          isPrivate
-        })
-      });
-      
-      const createData = await createRes.json();
-      if (!createRes.ok) {
-        if (createData.logs) setLogs(createData.logs);
-        throw new Error(createData.error || 'Failed to create repository');
+      let targetRepoFullName = repoFullName;
+
+      if (!repoExists) {
+        // 1. Create Repository
+        const createRes = await fetch('/api/github/create-repo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userEmail,
+            name: repoName,
+            description,
+            isPrivate
+          })
+        });
+        
+        const createData = await createRes.json();
+        if (!createRes.ok) {
+          if (createData.logs) setLogs(createData.logs);
+          throw new Error(createData.error || 'Failed to create repository');
+        }
+        targetRepoFullName = createData.repo.full_name;
+        setRepoFullName(targetRepoFullName);
       }
-      setRepoFullName(createData.repo.full_name);
 
       // 2. Deploy Files
       setStatus('deploying');
@@ -57,9 +94,9 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: userEmail,
-          repoFullName: createData.repo.full_name,
+          repoFullName: targetRepoFullName,
           gameData,
-          commitMessage: `Initial deployment of ${projectName}`
+          commitMessage: repoExists ? `Update game via Animato Studio` : `Initial deployment of ${projectName}`
         })
       });
 
@@ -80,7 +117,6 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
   const copyLogs = () => {
     const logText = logs.join('\n');
     navigator.clipboard.writeText(logText);
-    // Optional: show a toast or feedback
   };
 
   if (!isOpen) return null;
@@ -109,8 +145,8 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                 <Github size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Deploy to GitHub Pages</h3>
-                <p className="text-xs text-gray-500">Create a professional repository and host your game.</p>
+                <h3 className="text-xl font-bold text-white">Deploy to GitHub</h3>
+                <p className="text-xs text-gray-500">Host your game on GitHub Pages or Vercel.</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-400 transition-colors">
@@ -119,58 +155,78 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
           </div>
 
           <div className="p-8">
+            {status === 'checking' && (
+               <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                 <Loader2 className="animate-spin text-purple-500" size={32} />
+                 <p className="text-gray-400 font-medium">Checking repository status...</p>
+               </div>
+            )}
+
             {status === 'idle' && (
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Repository Name</label>
-                  <input 
-                    type="text" 
-                    value={repoName}
-                    onChange={(e) => setRepoName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors"
-                    placeholder="my-awesome-game"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Description (Optional)</label>
-                  <textarea 
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors h-24 resize-none"
-                    placeholder="A professional game project..."
-                  />
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setIsPrivate(false)}
-                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${!isPrivate ? 'bg-purple-500/10 border-purple-500 text-white' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/10'}`}
-                  >
-                    <Globe size={18} />
-                    <div className="text-left">
-                      <div className="text-sm font-bold">Public</div>
-                      <div className="text-[10px] opacity-70">Anyone can see this repo</div>
+                {!repoExists ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Repository Name</label>
+                      <input 
+                        type="text" 
+                        value={repoName}
+                        onChange={(e) => setRepoName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                        onBlur={checkRepoExistence}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors"
+                        placeholder="my-awesome-game"
+                      />
                     </div>
-                  </button>
-                  <button 
-                    onClick={() => setIsPrivate(true)}
-                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${isPrivate ? 'bg-zinc-800 border-zinc-600 text-white' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/10'}`}
-                  >
-                    <Lock size={18} />
-                    <div className="text-left">
-                      <div className="text-sm font-bold">Private</div>
-                      <div className="text-[10px] opacity-70">Only you can see this repo</div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Description (Optional)</label>
+                      <textarea 
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors h-24 resize-none"
+                        placeholder="A professional game project..."
+                      />
                     </div>
-                  </button>
-                </div>
+
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => setIsPrivate(false)}
+                        className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${!isPrivate ? 'bg-purple-500/10 border-purple-500 text-white' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/10'}`}
+                      >
+                        <Globe size={18} />
+                        <div className="text-left">
+                          <div className="text-sm font-bold">Public</div>
+                          <div className="text-[10px] opacity-70">Anyone can see this repo</div>
+                        </div>
+                      </button>
+                      <button 
+                        onClick={() => setIsPrivate(true)}
+                        className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${isPrivate ? 'bg-zinc-800 border-zinc-600 text-white' : 'bg-transparent border-white/5 text-gray-500 hover:border-white/10'}`}
+                      >
+                        <Lock size={18} />
+                        <div className="text-left">
+                          <div className="text-sm font-bold">Private</div>
+                          <div className="text-[10px] opacity-70">Only you can see this repo</div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-2xl p-5 mb-4">
+                    <h4 className="text-white font-bold mb-1">Update Existing Project</h4>
+                    <p className="text-sm text-gray-400">
+                      The repository <strong>{repoFullName}</strong> already exists. 
+                      Click below to push your latest changes.
+                    </p>
+                  </div>
+                )}
 
                 <button 
                   onClick={handleDeploy}
                   disabled={!repoName.trim()}
                   className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-purple-900/20"
                 >
-                  Create & Deploy
+                  {repoExists ? 'Push Update to GitHub' : 'Create & Deploy'}
                 </button>
               </div>
             )}
@@ -322,3 +378,4 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
     </AnimatePresence>
   );
 };
+

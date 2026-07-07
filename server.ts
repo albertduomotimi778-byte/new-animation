@@ -1846,12 +1846,72 @@ app.get('/api/auth/github/status', async (req, res) => {
     const docSnap = await originalGetDoc(doc(db, 'github_connections', email));
     if (docSnap.exists()) {
       const data = docSnap.data();
-      return res.json({ status: true, connected: true, username: data.username, avatar_url: data.avatar_url });
+      
+      // Validate that the token has the required 'workflow' scope
+      const fetchFn = (globalThis.fetch || fetch);
+      const userRes = await fetchFn('https://api.github.com/user', {
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`,
+          'Accept': 'application/vnd.github+json',
+          'User-Agent': 'Animato-Studio'
+        }
+      });
+      
+      if (userRes.ok) {
+        const scopesHeader = userRes.headers.get('x-oauth-scopes') || '';
+        if (!scopesHeader.includes('workflow')) {
+          console.warn(`[api/auth/github/status] Token for ${email} lacks 'workflow' scope. Disconnecting user to force re-auth.`);
+          await originalDeleteDoc(doc(db, 'github_connections', email));
+          return res.json({ status: true, connected: false });
+        }
+        return res.json({ status: true, connected: true, username: data.username, avatar_url: data.avatar_url });
+      } else {
+        // Token might be invalid/expired
+        console.warn(`[api/auth/github/status] Token for ${email} is invalid (${userRes.status}). Disconnecting.`);
+        await originalDeleteDoc(doc(db, 'github_connections', email));
+        return res.json({ status: true, connected: false });
+      }
     }
     return res.json({ status: true, connected: false });
   } catch (err: any) {
     console.error('[api/auth/github/status] Error:', err);
     res.status(500).json({ status: false, message: err.message });
+  }
+});
+
+app.post('/api/github/check-repo', async (req, res) => {
+  const { email, repoName } = req.body;
+  if (!email || !repoName) return res.status(400).json({ error: 'Email and repoName are required' });
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+    const docSnap = await originalGetDoc(doc(db!, 'github_connections', normalizedEmail));
+    if (!docSnap.exists()) return res.status(401).json({ error: 'GitHub not connected' });
+    
+    const { access_token } = docSnap.data();
+    
+    const userRes = await fetch('https://api.github.com/user', {
+      headers: { 
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'Animato-Studio'
+      }
+    });
+    const userData = await userRes.json();
+    if (userRes.ok && userData.login) {
+      const checkRepoRes = await fetch(`https://api.github.com/repos/${userData.login}/${repoName}`, {
+        headers: { 
+          'Authorization': `Bearer ${access_token}`,
+          'Accept': 'application/vnd.github+json',
+          'User-Agent': 'Animato-Studio'
+        }
+      });
+      if (checkRepoRes.ok) {
+        return res.json({ exists: true, repoFullName: `${userData.login}/${repoName}` });
+      }
+    }
+    return res.json({ exists: false });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -2127,7 +2187,7 @@ app.post('/api/github/deploy', async (req, res) => {
       },
       {
         path: 'src/App.tsx',
-        content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor, width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor }}>\n        {stageElements.map(el => (\n           <div key={el.id} style={{ position: 'absolute', left: el.x, top: el.y, width: el.width, height: el.height, backgroundImage: el.url ? \`url(\${el.url})\` : undefined, backgroundSize: '100% 100%' }}>\n             {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none'}}>{el.text}</button>}\n           </div>\n        ))}\n      </div>\n    </div>\n  );\n}`
+        content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  const handleButtonClick = (elId) => {\n    const events = gameData.sceneEvents[activeSceneId] || [];\n    const ev = events.find(e => e.elementId === elId && e.trigger === 'onClick');\n    if (ev) {\n      if (ev.action === 'gotoScene' && ev.targetId) {\n        setActiveSceneId(ev.targetId);\n      } else if (ev.action === 'playSound' && ev.targetId) {\n        const audio = new Audio(ev.targetId);\n        audio.play().catch(console.error);\n      }\n    }\n  };\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor || '#000', width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor || '#000', overflow: 'hidden' }}>\n        {stageElements.map((el, i) => {\n           const isButton = el.type === 'btn' || el.type === 'obj';\n           return (\n             <div \n               key={el.id || i} \n               onClick={(e) => {\n                 if (isButton) {\n                   e.stopPropagation();\n                   handleButtonClick(el.id);\n                 }\n               }}\n               style={{ \n                 position: 'absolute', \n                 left: el.type === 'bg' ? 0 : el.x, \n                 top: el.type === 'bg' ? 0 : el.y, \n                 width: el.type === 'bg' ? '100%' : el.width, \n                 height: el.type === 'bg' ? '100%' : el.height, \n                 backgroundImage: (el.type !== 'obj' && (el.url || el.data)) ? \`url(\${el.url || el.data})\` : undefined, \n                 backgroundSize: '100% 100%',\n                 backgroundRepeat: 'no-repeat',\n                 opacity: el.opacity !== undefined ? el.opacity : 1,\n                 transform: el.rotation ? \`rotate(\${el.rotation}deg)\` : undefined,\n                 cursor: isButton ? 'pointer' : 'default',\n                 zIndex: el.type === 'bg' ? 0 : (el.layerId ? 10 : 20)\n               }}\n             >\n               {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}\n             </div>\n           );\n        })}\n      </div>\n    </div>\n  );\n}`
       },
       {
         path: 'README.md',
