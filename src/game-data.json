@@ -24,9 +24,19 @@
   "sceneEvents": {
     "scene_1": [
       {
-        "conditions": [],
+        "conditions": [
+          {
+            "type": "pressed",
+            "target": "el_1783434659936"
+          }
+        ],
         "id": "ev_1",
-        "actions": []
+        "actions": [
+          {
+            "type": "js",
+            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });"
+          }
+        ]
       }
     ]
   },
