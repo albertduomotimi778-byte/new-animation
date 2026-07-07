@@ -8,13 +8,13 @@
   "sceneElements": {
     "scene_1": [
       {
-        "id": "el_1783442442544",
+        "id": "el_1783442854809",
         "type": "btn",
-        "buttonId": "btn_right",
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+        "buttonId": "btn_left",
+        "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
         "url": null,
-        "x": 180,
-        "y": 149,
+        "x": 50,
+        "y": 121,
         "width": 50,
         "height": 50,
         "layerId": "layer_1"
@@ -27,7 +27,7 @@
         "conditions": [
           {
             "type": "pressed",
-            "target": "el_1783442442544"
+            "target": "el_1783442854809"
           }
         ],
         "actions": [
