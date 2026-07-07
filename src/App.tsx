@@ -207,6 +207,7 @@ export default function GameRunner() {
         break;
 
       case 'js':
+        console.log('Executing custom JS action:', act.code);
         if (act.code) {
           try {
             const runUserCode = new Function(
