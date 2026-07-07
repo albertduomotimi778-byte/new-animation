@@ -34,6 +34,7 @@ export default function GameRunner() {
   const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');
   const [stageElements, setStageElements] = useState([]);
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 640, height: typeof window !== 'undefined' ? window.innerHeight : 360 });
+  const [showRotationPrompt, setShowRotationPrompt] = useState(false);
 
   const aspectRatio = gameData.aspectRatio || 'landscape';
   const VIRTUAL_WIDTH = aspectRatio === 'landscape' ? 640 : 360;
@@ -41,11 +42,27 @@ export default function GameRunner() {
 
   useEffect(() => {
     const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setWindowSize({ width: w, height: h });
+      if (aspectRatio === 'landscape' && w < h) {
+        setShowRotationPrompt(true);
+      } else if (aspectRatio === 'portrait' && w > h) {
+        setShowRotationPrompt(true);
+      } else {
+        setShowRotationPrompt(false);
+      }
     };
+    handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    const mql = window.matchMedia('(orientation: landscape)');
+    const mqlListener = () => handleResize();
+    try { mql.addEventListener('change', mqlListener); } catch(e) { window.addEventListener('orientationchange', mqlListener); }
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      try { mql.removeEventListener('change', mqlListener); } catch(e) { window.removeEventListener('orientationchange', mqlListener); }
+    };
+  }, [aspectRatio]);
 
   const scale = (() => {
     const maxW = windowSize.width;
@@ -252,7 +269,7 @@ export default function GameRunner() {
     sceneEvents.forEach(ev => {
       const isPressed = ev.conditions?.some(cond => 
         (cond.type === 'pressed' || cond.type === 'pressed_time' || cond.type === 'double_tap' || cond.type === 'click') && 
-        (cond.target === buttonId || (btnEl?.buttonId && cond.target === btnEl.buttonId))
+        (cond.target === buttonId || (btnEl?.buttonId && cond.target === btnEl.buttonId) || (btnEl?.data && cond.target === btnEl.data))
       );
       if (isPressed) {
         ev.actions?.forEach(act => executeAction(act));
@@ -357,11 +374,12 @@ export default function GameRunner() {
            const layerZ = layerIdx === -1 ? 10 : (layers.length - layerIdx) * 10;
            const finalZ = isText ? layerZ + 2000 : layerZ;
 
+           const isInteractive = isButton || el.type === 'obj' || el.type === 'enemy';
            return (
              <div 
                key={el.id || i} 
                onClick={(e) => {
-                 if (isButton) {
+                 if (isInteractive) {
                    e.stopPropagation();
                    handleButtonClick(el.id);
                  }
@@ -378,8 +396,8 @@ export default function GameRunner() {
                  backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined,
                  opacity: el.opacity !== undefined ? el.opacity : 1,
                  transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-                 cursor: isButton ? 'pointer' : 'default',
-                 pointerEvents: isButton ? 'auto' : 'none',
+                 cursor: isInteractive ? 'pointer' : 'default',
+                 pointerEvents: isInteractive ? 'auto' : 'none',
                  zIndex: el.type === 'bg' ? 0 : finalZ
                }}
              >
@@ -422,6 +440,14 @@ export default function GameRunner() {
            );
         })}
       </div>
+      {showRotationPrompt && (
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(10,10,12,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 4s linear infinite' }}>🔄</div>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>Please Rotate Your Device</h2>
+          <p style={{ color: '#a1a1aa', fontSize: '14px', maxWidth: '300px', marginBottom: '24px' }}>This game is designed for {aspectRatio} screen layout. Please rotate your screen for the best experience.</p>
+          <button onClick={() => setShowRotationPrompt(false)} style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>Play Anyway</button>
+        </div>
+      )}
     </div>
   );
 }
