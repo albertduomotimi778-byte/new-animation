@@ -1,0 +1,91 @@
+import React, { useState, useRef, useEffect, Suspense, lazy, useCallback, useMemo } from 'react';
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [showSuccessSplash, setShowSuccessSplash] = useState(false);
+  const [successPlan, setSuccessPlan] = useState('');
+  const [successExpiry, setSuccessExpiry] = useState('');
+  const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'verified'>('verifying');
+  const [showSplash, setShowSplash] = useState(true);
+  const [showSignIn, setShowSignIn] = useState(() => {
+  const [showSubscription, setShowSubscription] = useState(() => {
+  const [isExpired, setIsExpired] = useState(() => {
+  const [justRenewed, setJustRenewed] = useState(false); // To prevent stale sync after payment
+  const [showLanguageSelector, setShowLanguageSelector] = useState(() => {
+  const [appMode, setAppMode] = useState<'PROJECT_MANAGER' | 'EDITOR' | 'CLOSED'>('PROJECT_MANAGER');
+  const [user, setUser] = useState<any>(() => {
+  const [isLowPerformanceMode, setIsLowPerformanceMode] = useState(() => {
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(
+  const [isDesktopLike, setIsDesktopLike] = useState(window.innerWidth >= 1024);
+  const [activeTheme, setActiveTheme] = useState<ThemeType>(() => {
+  const [currentProjectId, setCurrentProjectId] = useState<string>(`proj_${Date.now()}`);
+  const [projectName, setProjectName] = useState("Untitled Project");
+  const [projectType, setProjectType] = useState<ProjectType>('CHARACTER'); // Default
+  const [savedProjects, setSavedProjects] = useState<ProjectMetadata[]>([]);
+  const [theme] = useState<'light' | 'dark'>('dark');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [activeTrackId, setActiveTrackId] = useState<'vocal' | 'inst'>('vocal');
+  const [selection, setSelection] = useState<{ start: number, end: number } | null>(null);
+  const [isLooping, setIsLooping] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [isCharacterBuilderOpen, setIsCharacterBuilderOpen] = useState(false);
+  const [isCharacterStudioModalOpen, setIsCharacterStudioModalOpen] = useState(false);
+  const [newCharacterName, setNewCharacterName] = useState('New Character');
+  const [activeLeftTab, setActiveLeftTab] = useState<'MIX' | 'HIERARCHY'>('MIX');
+  const [assemblerSession, setAssemblerSession] = useState<AssemblerSession | null>(null);
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
+  const [activeBottomTab, setActiveBottomTab] = useState<'TIMELINE' | 'SCENE' | 'CHAR' | 'FACE' | 'FX' | 'LIP' >('TIMELINE');
+  const [isTabsVisible, setIsTabsVisible] = useState(false);
+  const [isAnchorMode, setIsAnchorMode] = useState(false); 
+  const [showGrid, setShowGrid] = useState(false); 
+  const [activeBoneId, setActiveBoneId] = useState<string | null>(null);
+  const [activeRigTool, setActiveRigTool] = useState<'BONE' | 'HAND' | 'DELETE' | 'MOVE'>('BONE');
+  const [rigType, setRigType] = useState<'MESH' | 'HUMAN'>('MESH');
+  const [activeLightId, setActiveLightId] = useState<string | null>(null);
+  const [lightSources, setLightSources] = useState<LightSource[]>([]);
+  const [activeFxTab, setActiveFxTab] = useState<'SUN' | 'BULB' | 'LIGHTNING' | 'SETTINGS'>('SUN');
+  const [ambientLightLevel, setAmbientLightLevel] = useState(0.15);
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [easingMenuOpen, setEasingMenuOpen] = useState(false);
+  const [easingMenuPos, setEasingMenuPos] = useState({x: 0, y: 0});
+  const [editingKeyframeId, setEditingKeyframeId] = useState<string | null>(null);
+  const [propertyTarget, setPropertyTarget] = useState<string>('root');
+  const [selectedPartIds, setSelectedPartIds] = useState<string[]>(['root']);
+  const [isSelectionMenuOpen, setIsSelectionMenuOpen] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState("16/9");
+  const [canvasBgColor, setCanvasBgColor] = useState("#ffffff");
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [isCanvasTransparent, setIsCanvasTransparent] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<BackgroundImageState>({ url: null, width: 0, height: 0 });
+  const [backgroundTransform, setBackgroundTransform] = useState({ zoom: 100, x: 50, y: 50, blur: 0, brightness: 100, contrast: 100, saturation: 100 });
+  const [linkBgToCamera, setLinkBgToCamera] = useState(false);
+  const [thumbnailScale, setThumbnailScale] = useState(1);
+    const [characters, setCharacters] = useState<{ 
+    const [activeSceneCharacterId, setActiveSceneCharacterId] = useState<string | null>(null);
+    const [lipSyncTargetId, setLipSyncTargetId] = useState<string | 'ALL'>('ALL');
+    const [characterFiltersMap, setCharacterFiltersMap] = useState<Record<string, { saturation: number, contrast: number, brightness: number, sharpness: number }>>({});
+  const [cameraTransform, setCameraTransform] = useState({ x: 0, y: 0, scale: 1, rotation: 0 });
+  const [keyframes, setKeyframes] = useState<Keyframe[]>([]); 
+  const [lipSyncKeyframes, setLipSyncKeyframes] = useState<LipSyncKeyframe[]>([]); 
+  const [isLipSyncModalOpen, setIsLipSyncModalOpen] = useState(false); 
+  const [clipboardKeyframe, setClipboardKeyframe] = useState<Keyframe | null>(null);
+  const [autoKeyEnabled, setAutoKeyEnabled] = useState(false);
+  const [selectedKeyframeId, setSelectedKeyframeId] = useState<string | null>(null);
+  const [isDraggingChar, setIsDraggingChar] = useState(false);
+  const [isDraggingCamera, setIsDraggingCamera] = useState(false);
+  const [isVisemeMapperOpen, setIsVisemeMapperOpen] = useState(false);
+  const [visemeMap, setVisemeMap] = useState<Record<VisemeShape, string | null>>({
+  const [manualVisemeOverride, setManualVisemeOverride] = useState<VisemeShape | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1.5);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false); 
+  const [customCSS, setCustomCSS] = useState('');
+  const [shadowConfig, setShadowConfig] = useState<ShadowConfig>({ enabled: false, opacity: 0.3, blur: 5, skewX: -20, scaleY: 0.3, offsetX: 10, offsetY: 10, color: '#000000' });
+  const [depthShadowConfig, setDepthShadowConfig] = useState<ShadowConfig>({ enabled: false, opacity: 0.2, blur: 10, skewX: 0, scaleY: 1, offsetX: 0, offsetY: 5, color: '#000000' });
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean, trackId: 'vocal' | 'inst' | null }>({ isOpen: false, trackId: null });
+  const [sliceModal, setSliceModal] = useState<{ isOpen: boolean, time: number, trackId: 'vocal' | 'inst' }>({ isOpen: false, time: 0, trackId: 'vocal' });
+  const [extraDuration, setExtraDuration] = useState(0);
+  const [frameData, setFrameData] = useState<FrameData[]>([]);
+  const [frameSettings, setFrameSettings] = useState<FrameSettings | undefined>(undefined);
+  const [shouldRecordHistory, setShouldRecordHistory] = useState(false);

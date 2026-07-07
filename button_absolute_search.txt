@@ -1,0 +1,60 @@
+102:                <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden" style={{ opacity: layer.opacity }}>
+117:            <div className="absolute inset-0 w-full h-full pointer-events-none opacity-30 blur-[12px] saturate-50 grayscale-[50%] transition-all duration-500 scale-[1.05]">
+142:        <div className="absolute inset-0 w-full h-full pointer-events-none opacity-0 animate-in fade-in transition-opacity duration-500 delay-100 ease-in-out" style={{ opacity: 1 }}>
+204:            <div className="absolute top-1 left-1 z-10 bg-cyan-500 text-black text-[9px] font-black px-1.5 rounded">{index + 1}</div>
+285:// Uses delta position changes rather than absolute client offsets
+1820:                        // This pixel is on an absolute edge, erode it aggressively
+3361:                <div className="absolute inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center">
+3480:                                <motion.div layoutId="tool-active" className="absolute inset-0 bg-cyan-500/20 rounded-xl -z-10 shadow-cyan-500/40" />
+3495:                                <motion.div layoutId="tool-active" className="absolute inset-0 bg-red-500/20 rounded-xl -z-10 shadow-red-500/40" />
+3510:                                <motion.div layoutId="tool-active" className="absolute inset-0 bg-amber-500/20 rounded-xl -z-10 shadow-amber-500/40" />
+3534:                                    <motion.div layoutId="tool-active" className="absolute inset-0 bg-cyan-500/20 rounded-xl -z-10 shadow-[0_0_15px_rgba(6,182,212,0.4)]" />
+3639:                                        className="absolute -bottom-12 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-cyan-600 text-white text-[10px] font-bold rounded-lg shadow-xl animate-in fade-in slide-in-from-top-2 whitespace-nowrap z-[1001] flex items-center gap-2 border border-white/20 hover:bg-cyan-500 transition-colors"
+3723:                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-black/90 border border-white/10 p-2 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 min-w-[180px] animate-in slide-in-from-top-2 z-[9999]" onPointerDown={e => e.stopPropagation()}>
+3778:                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-black/90"></div>
+3789:                                <div className="absolute inset-x-1 bottom-1 h-1.5 rounded-full" style={{ backgroundColor: penColor }}></div>
+3796:                                <div className="absolute inset-x-1 bottom-1 h-1.5 rounded-full" style={{ backgroundColor: fillColor }}></div>
+3817:                                <motion.div layoutId="tool-active" className="absolute inset-0 bg-amber-500 rounded-xl -z-10" />
+3849:                        <div className="absolute right-0 top-full mt-2 bg-[#111] border border-white/10 p-3 rounded-2xl shadow-2xl flex flex-col gap-3 z-[9999] min-w-[200px]" onPointerDown={e => e.stopPropagation()}>
+3865:                                    <div className="absolute inset-0 rounded-full" style={{ backgroundImage: 'conic-gradient(#333 90deg, #444 90deg 180deg, #333 180deg 270deg, #444 270deg)', backgroundSize: '10px 10px' }} />
+3928:                    <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[300] flex flex-col items-center pointer-events-none">
+3941:                        className="draggable-panel absolute z-[250] bg-[#111]/95 border border-white/10 rounded-xl shadow-2xl w-48 overflow-hidden"
+4008:                        className={`draggable-panel absolute z-50 w-11 h-11 border rounded-full shadow-2xl flex items-center justify-center cursor-move touch-none transition-colors ${
+4046:                                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-[#18181b]" style={{ backgroundColor: penColor }}></div>
+4055:                        className="draggable-panel absolute z-50 bg-[#18181b] border border-white/10 rounded-xl shadow-2xl w-64 overflow-hidden"
+4078:                                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+4146:                        className="draggable-panel absolute z-50 bg-[#111] border border-white/10 rounded-xl shadow-2xl flex flex-col w-64 overflow-hidden animate-in fade-in slide-in-from-right-4"
+4171:                                    <div className="absolute top-full left-0 z-[9999] mt-1 bg-black/90 border border-white/10 p-2 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 min-w-[180px] animate-in slide-in-from-top-2" onPointerDown={e => e.stopPropagation()}>
+4339:                            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{
+4372:                                    className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-150"
+4382:                                                <div style={{ zIndex: index * 10, position: 'absolute', inset: 0 }}>
+4397:                                                    <div className="absolute inset-0 w-full h-full pointer-events-auto" style={{ zIndex: index * 10 + 5, opacity: layer.opacity !== undefined ? layer.opacity : 1 }}>
+4400:                                                            className="absolute inset-0 w-full h-full touch-none"
+4408:                                                            className={`absolute inset-0 w-full h-full touch-none ${activeBrush.category === 'ERASER' ? 'cursor-cell' : 'cursor-crosshair'}`}
+4412:                                                            className="absolute inset-0 w-full h-full touch-none pointer-events-none"
+4417:                                                                className="absolute top-4 right-4 p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl shadow-2xl z-[500] flex items-center gap-2 animate-in fade-in zoom-in slide-in-from-top-4 transition-all active:scale-95 border border-white/20 group pointer-events-auto"
+4435:                            <svg className="absolute inset-0 w-full h-full pointer-events-none z-[400]" viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}>
+4448:                            <div className="absolute inset-0 w-full h-full z-[300] bg-black/40 pointer-events-auto">
+4450:                                    className="absolute border-2 border-cyan-500 border-dashed cursor-move group p-1"
+4504:                                        className="absolute w-6 h-6 -ml-3 -mt-3 flex items-center justify-center cursor-move z-30"
+4556:                                        className="absolute -bottom-4 -right-4 w-8 h-8 bg-cyan-500 rounded-full border-2 border-white cursor-nwse-resize active:scale-125 transition-transform flex items-center justify-center shadow-xl z-20"
+4593:                                        className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 bg-amber-500 rounded-full border-2 border-white cursor-crosshair active:scale-125 transition-transform flex items-center justify-center shadow-xl z-20"
+4621:                                        <div className="absolute top-8 w-0.5 h-4 bg-amber-500/50"></div>
+4628:                                className="absolute inset-0 w-full h-full z-[200] bg-black/70 backdrop-blur-[12px] cursor-pointer animate-in fade-in duration-300 transition-all shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]"
+4938:                    <div className="absolute inset-0 bg-[#0c0c0e]/95 pointer-events-none" />
+4941:                    <div className="absolute top-0 left-0 right-0 h-14 bg-[#111] border-b border-white/10 z-[1001] flex items-center justify-between px-6">
+5041:                                    <div className="absolute inset-0 z-50 bg-[#0c0c0e] flex flex-col items-center justify-center gap-6 animate-in fade-in">
+5043:                                            <div className="absolute inset-0 border-4 border-white/5 rounded-full"></div>
+5044:                                            <div className="absolute inset-0 border-4 border-cyan-500 rounded-full border-t-transparent animate-spin"></div>
+5045:                                            <div className="absolute inset-0 flex items-center justify-center text-xl font-bold font-mono text-white">
+5067:                                <div className="absolute inset-0 z-0 opacity-10" style={{
+5074:                            <div className="absolute inset-0 z-10 w-full h-full">
+5080:                                            className="absolute inset-0 w-full h-full"
+5108:                        <div className="absolute bottom-12 w-full px-12 z-[1001] pointer-events-none">
+5111:                                    className="absolute h-full bg-cyan-500 transition-all duration-100"
+5127:                                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[500] pointer-events-none"
+5141:                        <div className="absolute inset-0 border-4 border-white/5 rounded-full"></div>
+5142:                        <div className="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
+5143:                        <div className="absolute inset-0 flex items-center justify-center text-2xl font-black text-white font-mono">
+5194:                                        <div className="absolute top-2 left-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-lg">
+5198:                                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-1">

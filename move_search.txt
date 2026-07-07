@@ -1,0 +1,82 @@
+import { PenTool, Eraser, Play, Pause, Plus, Trash2, Copy, ClipboardPaste, Layers, Image as ImageIcon, ChevronLeft, Save, Palette, ChevronDown, Brush, Sliders, X, Ratio, Monitor, Smartphone, LayoutGrid, Instagram, Youtube, PaintBucket, Eye, EyeOff, Edit2, GripHorizontal, Bone as BoneIcon, Check, Move, Hand, Wind, Pipette, Undo, RotateCcw, RotateCw, Scissors, Sparkles, Download, Video, Music, AudioWaveform, Ruler, MoreVertical, Loader2 } from 'lucide-react';
+import { removeBackground as imglyRemoveBackground } from '@imgly/background-removal';
+        return () => window.removeEventListener('resize', handleResize);
+    const onPointerMove = (e: React.PointerEvent) => {
+    return { pos, setPos, onPointerDown, onPointerMove, onPointerUp, draggingRef: draggingProxy, dragStartRef };
+    // Remove riggingToolsPanel draggable if no longer needed
+    // Selection / Lasso Move State
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        const handleTouchMove = (e: TouchEvent) => {
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+            container.removeEventListener('wheel', handleWheel);
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+            container.removeEventListener('touchend', handleTouchEnd);
+                // Move to center of cutout for proper pivot rotation
+        // --- CLEANUP PASS: Remove thin halos/fringes by eroding 2px border ---
+                    // Remove "ghost" pixels with extremely low alpha
+    const drawMove = (e: React.PointerEvent) => {
+                        mainCtx.moveTo(lastTwoPoints[0].x, lastTwoPoints[0].y);
+                        mainCtx.moveTo(prevPos.x, prevPos.y);
+                        previewCtx.moveTo(lastTwoPoints[0].x, lastTwoPoints[0].y);
+                        previewCtx.moveTo(prevPos.x, prevPos.y);
+                    previewCtx.moveTo(pointsRef.current[0].x, pointsRef.current[0].y);
+            tCtx.moveTo(lassoPoints[0].x, lassoPoints[0].y);
+                ctx.moveTo(lassoPoints[0].x, lassoPoints[0].y);
+                        video.removeEventListener('seeked', onSeeked);
+        // Sync current frame selection to follow the moved item
+            ctx.moveTo(x - radiusX, y);
+            ctx.moveTo(x, 0);
+    const handleRemoveBackground = async () => {
+            const foregroundBlob = await imglyRemoveBackground(originalUri, {
+                    triggerLocalToast(t('Background removed!'));
+            triggerLocalToast(t(`Failed to remove background: ${error.message || error}`));
+            const foregroundBlob = await imglyRemoveBackground(originalUri, {
+                                title={t('Free Transform (Move/Scale Active Layer)')}
+                                <Move size={20}/>
+                                    title={t('Move Drawn Object (Lasso)')}
+                                title={t('Magic Eraser (Remove Background)')}
+                                            handleRemoveBackground();
+                                        <span>{t('Remove Background')}</span>
+                                {riggingTool === 'BONE' ? 'Job Bone' : riggingTool === 'HAND' ? 'Move Bone' : 'Delete Bone'}
+                            className="px-3 py-2 border-b border-white/5 flex justify-between items-center bg-white/5 cursor-move touch-none"
+                            onPointerMove={bonePanel.onPointerMove} 
+                        className={`draggable-panel absolute z-50 w-11 h-11 border rounded-full shadow-2xl flex items-center justify-center cursor-move touch-none transition-colors ${
+                        onPointerMove={settingsPanel.onPointerMove} 
+                            className="p-3 border-b border-white/5 flex justify-between items-center bg-[#111] cursor-move touch-none"
+                            onPointerMove={settingsPanel.onPointerMove} 
+                            className="p-3 border-b border-white/5 flex justify-between items-center bg-[#181818] cursor-move touch-none"
+                            onPointerMove={layerPanel.onPointerMove} 
+                                                handleRemoveBackground();
+                                            <span>{t('Remove Background')}</span>
+                            const transformOverlayOpacity = isTransforming ? 0.5 : 1.0;
+                            const finalOpacity = (isOnionSkin ? onionSkinSettings.opacity / distance : 1) * transformOverlayOpacity;
+                                                            onPointerMove={drawMove}
+                                    className="absolute border-2 border-cyan-500 border-dashed cursor-move group p-1"
+                                        const handleMove = (moveEvent: PointerEvent) => {
+                                                x: initialX + (moveEvent.clientX - startX) * ratioX,
+                                                y: initialY + (moveEvent.clientY - startY) * ratioY
+                                            window.removeEventListener('pointermove', handleMove);
+                                            window.removeEventListener('pointerup', handleUp);
+                                        window.addEventListener('pointermove', handleMove);
+                                        className="absolute w-6 h-6 -ml-3 -mt-3 flex items-center justify-center cursor-move z-30"
+                                            const handleMove = (moveEvent: PointerEvent) => {
+                                                const dx = moveEvent.clientX - startX;
+                                                const dy = moveEvent.clientY - startY;
+                                                startX = moveEvent.clientX;
+                                                startY = moveEvent.clientY;
+                                                window.removeEventListener('pointermove', handleMove);
+                                                window.removeEventListener('pointerup', handleUp);
+                                            window.addEventListener('pointermove', handleMove);
+                                            const handleMove = (moveEvent: PointerEvent) => {
+                                                const deltaX = (moveEvent.clientX - startX) * (canvasSize.width / rect.width);
+                                                window.removeEventListener('pointermove', handleMove);
+                                                window.removeEventListener('pointerup', handleUp);
+                                            window.addEventListener('pointermove', handleMove);
+                                            const handleMove = (moveEvent: PointerEvent) => {
+                                                const angle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+                                                window.removeEventListener('pointermove', handleMove);
+                                                window.removeEventListener('pointerup', handleUp);
+                                            window.addEventListener('pointermove', handleMove);
+                    <motion.div drag dragMomentum={false} className="relative bg-[#111] border border-white/10 p-5 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col gap-4 min-w-[240px] z-[10000] pointer-events-auto cursor-move animate-in fade-in zoom-in-95 duration-200">

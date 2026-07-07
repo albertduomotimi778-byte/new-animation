@@ -1,0 +1,83 @@
+components/PremiumSplash.tsx:96:>AM<
+components/PremiumSplash.tsx:127:>STUDIO<
+components/AdvancedColorPicker.tsx:213:>HEX<
+components/ProjectManager.tsx:245:>AM<
+components/ProjectManager.tsx:264:>Workspace<
+components/ProjectManager.tsx:586:>FPS<
+components/ProjectManager.tsx:602:>CANCEL<
+components/ProjectManager.tsx:656:>CANCEL<
+components/FrameByFrameEditor.tsx:2159:>FRAME<
+components/FrameByFrameEditor.tsx:2376:>SMOOTHING<
+components/FrameByFrameEditor.tsx:2432:>PRECISE<
+components/FrameByFrameEditor.tsx:2434:>BOLD<
+components/FrameByFrameEditor.tsx:2548:>BEND<
+components/FrameByFrameEditor.tsx:2560:>STRETCH<
+components/FrameByFrameEditor.tsx:2572:>WIDTH<
+components/FrameByFrameEditor.tsx:2625:>SIZE<
+components/FrameByFrameEditor.tsx:2638:>OPACITY<
+components/FrameByFrameEditor.tsx:3088:>FPS<
+components/FrameByFrameEditor.tsx:3231:>Format<
+components/FrameByFrameEditor.tsx:3282:>ENCODING<
+components/PremiumSignIn.tsx:126:>AM<
+components/PremiumSignIn.tsx:164:>Password<
+components/AiGeneratorModal.tsx:379:> GENERATE<
+components/PuppetWarp.tsx:68:> Record<
+components/VisemeMapper.tsx:145:>CHANGE<
+components/CharacterPackImporter.tsx:808:>ASSEMBLER<
+components/CharacterPackImporter.tsx:858:>IMPLEMENT<
+components/CharacterPackImporter.tsx:1045:> TRANSFORM<
+components/CharacterPackImporter.tsx:1067:>UNIFORM<
+components/CharacterPackImporter.tsx:1140:>BACK<
+components/CharacterPackImporter.tsx:1141:>FRONT<
+components/CharacterPackImporter.tsx:1173:> ASSETS<
+components/CharacterPackImporter.tsx:1205:> REQUIRED<
+components/CharacterDesigner.tsx:1043:>Scale<
+components/CharacterDesigner.tsx:1073:>Color<
+components/CharacterDesigner.tsx:1103:>Color<
+components/CharacterDesigner.tsx:1124:>Size<
+components/CharacterDesigner.tsx:1134:>Color<
+components/CharacterDesigner.tsx:1172:>Layers<
+components/CharacterDesigner.tsx:1236:> Layers<
+components/CharacterDesigner.tsx:1239:>Group<
+components/CharacterDesigner.tsx:1240:>Mouth<
+components/MixingConsole.tsx:85:>GAIN<
+components/MixingConsole.tsx:99:>PITCH<
+components/CharacterBuilder.tsx:179:>CLEAR<
+components/CharacterBuilder.tsx:996:> HIERARCHY<
+components/CharacterBuilder.tsx:1103:> PROPERTIES<
+components/CharacterBuilder.tsx:1108:>Identity<
+components/CharacterBuilder.tsx:1111:>ID<
+components/CharacterBuilder.tsx:1119:>Transform<
+components/CharacterBuilder.tsx:1125:>ROTATION<
+components/CharacterBuilder.tsx:1160:>Expression<
+components/CharacterBuilder.tsx:1195:>CANCEL<
+App.tsx:84:>INTERPOLATION<
+App.tsx:1888:>Ox<
+App.tsx:1933:>EXPORT<
+App.tsx:1959:>HIERARCHY<
+App.tsx:2187:>VOCAL<
+App.tsx:2228:>INST<
+App.tsx:2275:>ROTATION<
+App.tsx:2292:>REPLACE<
+App.tsx:2303:>TRANSPARENT<
+App.tsx:2343:> SELECTION<
+App.tsx:2381:> TRANSFORM<
+App.tsx:2387:>SCALE<
+App.tsx:2389:>ROTATION<
+App.tsx:2391:>OPACITY<
+App.tsx:2421:>SATURATION<
+App.tsx:2423:>CONTRAST<
+App.tsx:2425:>BRIGHTNESS<
+App.tsx:2574:>ROTATION<
+App.tsx:2594:>EDITING<
+App.tsx:2607:> VFX<
+App.tsx:2609:> AMBIENT<
+App.tsx:2616:>MORNING<
+App.tsx:2617:>NOON<
+App.tsx:2618:>EVENING<
+App.tsx:2627:>INTENSITY<
+App.tsx:2659:>INTENSITY<
+App.tsx:2661:>RADIUS<
+App.tsx:2663:>COLOR<
+App.tsx:2684:>LIGHTNING<
+App.tsx:2693:>COLOR<

@@ -1,0 +1,52 @@
+import { PenTool, Eraser, Play, Pause, Plus, Trash2, Copy, ClipboardPaste, Layers, Image as ImageIcon, ChevronLeft, Save, Palette, ChevronDown, Brush, Sliders, X, Ratio, Monitor, Smartphone, LayoutGrid, Instagram, Youtube, PaintBucket, Eye, EyeOff, Edit2, GripHorizontal, Bone as BoneIcon, Check, Move, Hand, Wind, Pipette, Undo, RotateCcw, RotateCw, Scissors, Sparkles, Download, Video, Music, AudioWaveform, Ruler, MoreVertical, Loader2 } from 'lucide-react';
+    isPlaying, 
+    isPlaying: boolean,
+    const isEditingThisLayer = !isPlaying && layer.id === activeLayerId;
+    if (!isPlaying && isEditingThisLayer && !hasBones) {
+        prev.isPlaying !== next.isPlaying ||
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [playbackSpeed, setPlaybackSpeed] = useState(settings?.fps || 12);
+    const [playheadProgress, setPlayheadProgress] = useState(0);
+        if (!audioBuffer || !audioContextRef.current || isPlaying) return;
+        source.start(0, offset, 0.2); // Play for 200ms
+        if (isRiggingMode || isPlaying || isTransforming || isDrawingRef.current) return; // Don't overwrite if drawing is in progress
+    }, [frames, currentFrameIndex, activeLayerId, canvasSize, isRiggingMode, isPlaying, isTransforming]);
+        if (!canvas || !activeLayerId || isPlaying) return null;
+        if (isPlaying) return; // Prevent heavy re-renders during playback loop
+    }, [currentFrameIndex, activeLayerId, canvasSize, loadActiveLayerToCanvas, isRiggingMode, isPlaying]); 
+        if (isPlaying || isRiggingMode) return;
+        if (isPlaying || (isRiggingMode)) return;
+        if (!isPlaying) {
+        const runPlayback = (time: number) => {
+                    setPlayheadProgress(loopedTime / Math.max(0.001, audioBuffer.duration));
+                    setPlayheadProgress(loopedTime / loopDuration);
+                    setPlayheadProgress(currentFrameIndexRef.current / length);
+            playbackFrameId.current = requestAnimationFrame(runPlayback);
+        playbackFrameId.current = requestAnimationFrame(runPlayback);
+    }, [isPlaying, playbackSpeed, useInterpolation]);
+        setIsPlaying(false);
+                                if (!isPlaying) saveActiveLayer();
+                                setIsPlaying(!isPlaying);
+                            className={`p-2.5 rounded-lg transition-all active:scale-90 flex items-center justify-center gap-2 text-xs font-bold ${isPlaying ? 'bg-red-500/20 text-red-500' : 'bg-cyan-500 text-black shadow-lg shadow-cyan-900/20'}`}
+                            {isPlaying ? <Pause size={16}/> : <Play size={16}/>}
+                            {isPlaying ? t('PAUSE') : t('PLAY')}
+                                if (!isPlaying) {
+                                    setIsPlaying(true);
+                            const isOnionSkinPrev = onionSkinEnabled && !isPlaying && frameIdx >= currentFrameIndex - onionSkinSettings.prev && frameIdx < currentFrameIndex;
+                            const isOnionSkinNext = onionSkinEnabled && !isPlaying && frameIdx <= currentFrameIndex + onionSkinSettings.next && frameIdx > currentFrameIndex;
+                            if (isPlaying) {
+                                                        isPlaying={isPlaying}
+                                                        getDynamicTransforms={isPlaying ? (() => interpTransformsGlobalRef.current?.[layer.name]) : undefined}
+                                                {isCurrentFrame && activeLayerId === layer.id && !isPlaying && !isRiggingMode && !isTransforming && (
+                        {!isPlaying && isTransforming && transformImageUri ? (
+                        ) : !isPlaying && isRiggingMode ? (
+                             <input type="number" min="1" max="60" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(parseInt(e.target.value))} className="w-8 bg-transparent text-center text-[11px] font-bold text-white outline-none"/>
+                                        setPlayheadProgress(p); // Progress matches where we clicked
+                                        if (isPlaying && audioBuffer) {
+                                        } else if (!isPlaying && audioBuffer) {
+                                    isPlaying 
+                                <Play size={16} fill="currentColor"/> {t('Render Animation')}
+                                onClick={() => { setIsShowingPreview(false); setIsPlaying(false); setExportedFile(null); }} 
+                                        autoPlay 
+                                            setIsPlaying(true);
+                                                    isPlaying={true}     // Force PLAY mode to render the raw image not canvas context

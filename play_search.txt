@@ -1,0 +1,90 @@
+9:import { PenTool, Eraser, Play, Pause, Plus, Trash2, Copy, ClipboardPaste, Layers, Image as ImageIcon, ChevronLeft, Save, Palette, ChevronDown, Brush, Sliders, X, Ratio, Monitor, Smartphone, LayoutGrid, Instagram, Youtube, PaintBucket, Eye, EyeOff, Edit2, GripHorizontal, Bone as BoneIcon, Check, Move, Hand, Wind, Pipette, Undo, RotateCcw, RotateCw, Scissors, Sparkles, Download, Video, Music, AudioWaveform, Ruler, MoreVertical, Loader2 } from 'lucide-react';
+13:import { WaveformDisplay } from './WaveformDisplay';
+74:    isPlaying, 
+85:    isPlaying: boolean,
+94:    const isEditingThisLayer = !isPlaying && layer.id === activeLayerId;
+96:    // If not playing and this is the active layer, it's rendered by the canvas/rigging tools.
+99:    if (!isPlaying && isEditingThisLayer && !hasBones) {
+128:                        mode="PLAY"
+153:                    mode="PLAY"
+170:        prev.isPlaying !== next.isPlaying ||
+661:    const [isPlaying, setIsPlaying] = useState(false);
+665:    const [playbackSpeed, setPlaybackSpeed] = useState(settings?.fps || 12);
+674:    const [playheadProgress, setPlayheadProgress] = useState(0);
+714:    const playAudioFrom = (startTime: number) => {
+730:        if (!audioBuffer || !audioContextRef.current || isPlaying) return;
+749:        source.start(0, offset, 0.2); // Play for 200ms
+1034:        if (isRiggingMode || isPlaying || isTransforming || isDrawingRef.current) return; // Don't overwrite if drawing is in progress
+1080:    }, [frames, currentFrameIndex, activeLayerId, canvasSize, isRiggingMode, isPlaying, isTransforming]);
+1158:        if (!canvas || !activeLayerId || isPlaying) return null;
+1268:        if (isPlaying) return; // Prevent heavy re-renders during playback loop
+1270:    }, [currentFrameIndex, activeLayerId, canvasSize, loadActiveLayerToCanvas, isRiggingMode, isPlaying]); 
+1285:            fps: playbackSpeed
+1838:        if (isPlaying || isRiggingMode) return;
+1951:        if (isPlaying || (isRiggingMode)) return;
+2590:            video.playsInline = true;
+2659:    // Auto-recalculate frames when playbackSpeed changes (if there is an original video)
+2661:        if (originalVideoRef.current && originalVideoRef.current.lastFps !== playbackSpeed) {
+2664:                extractVideoFrames(originalVideoRef.current.file, playbackSpeed);
+2667:    }, [playbackSpeed]);
+2826:    const playbackFrameId = useRef<number>(0);
+2836:        if (!isPlaying) {
+2842:        // Start audio when playback starts
+2844:            const frameTime = 1 / playbackSpeed;
+2846:            playAudioFrom(startTime);
+2849:        const runPlayback = (time: number) => {
+2851:            const frameTime = 1000 / Math.max(1, playbackSpeed);
+2862:                const loopDuration = length / Math.max(1, playbackSpeed);
+2864:                const targetFrame = Math.floor(loopedTime * playbackSpeed) % length;
+2865:                currentFrameProgress = (loopedTime * playbackSpeed) % 1;
+2871:                        playAudioFrom(0);
+2883:                    setPlayheadProgress(loopedTime / Math.max(0.001, audioBuffer.duration));
+2885:                    setPlayheadProgress(loopedTime / loopDuration);
+2901:                    setPlayheadProgress(currentFrameIndexRef.current / length);
+2941:            playbackFrameId.current = requestAnimationFrame(runPlayback);
+2944:        playbackFrameId.current = requestAnimationFrame(runPlayback);
+2946:            cancelAnimationFrame(playbackFrameId.current);
+2949:    }, [isPlaying, playbackSpeed, useInterpolation]);
+2963:        setIsPlaying(false);
+2989:                        frameRate: playbackSpeed
+3008:                        framerate: playbackSpeed
+3072:                    const timestamp = (i * 1000000) / playbackSpeed;
+3079:                        delay: 1000 / playbackSpeed,
+3110:                    const animDuration = frames.length / playbackSpeed;
+3880:                                if (!isPlaying) saveActiveLayer();
+3881:                                setIsPlaying(!isPlaying);
+3883:                            className={`p-2.5 rounded-lg transition-all active:scale-90 flex items-center justify-center gap-2 text-xs font-bold ${isPlaying ? 'bg-red-500/20 text-red-500' : 'bg-cyan-500 text-black shadow-lg shadow-cyan-900/20'}`}
+3885:                            {isPlaying ? <Pause size={16}/> : <Play size={16}/>}
+3886:                            {isPlaying ? t('PAUSE') : t('PLAY')}
+3891:                                if (!isPlaying) {
+3893:                                    setIsPlaying(true);
+4346:                        {/* RENDER INACTIVE LAYERS / PLAYBACK CACHE / ONION SKIN */}
+4352:                            const isOnionSkinPrev = onionSkinEnabled && !isPlaying && frameIdx >= currentFrameIndex - onionSkinSettings.prev && frameIdx < currentFrameIndex;
+4353:                            const isOnionSkinNext = onionSkinEnabled && !isPlaying && frameIdx <= currentFrameIndex + onionSkinSettings.next && frameIdx > currentFrameIndex;
+4357:                            if (isPlaying) {
+4388:                                                        isPlaying={isPlaying}
+4390:                                                        getDynamicTransforms={isPlaying ? (() => interpTransformsGlobalRef.current?.[layer.name]) : undefined}
+4397:                                                {isCurrentFrame && activeLayerId === layer.id && !isPlaying && !isRiggingMode && !isTransforming && (
+4448:                        {!isPlaying && isTransforming && transformImageUri ? (
+4496:                                        style={{ display: 'block', visibility: transformNaturalSize.width > 1 ? 'visible' : 'hidden' }} 
+4626:                        ) : !isPlaying && isRiggingMode ? (
+4717:                             <input type="number" min="1" max="60" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(parseInt(e.target.value))} className="w-8 bg-transparent text-center text-[11px] font-bold text-white outline-none"/>
+4750:                                            scrubAudio(idx / playbackSpeed);
+4765:                            <WaveformDisplay 
+4769:                                duration={Math.max(1, frames.length / playbackSpeed)}
+4771:                                    const audioDur = audioBuffer?.duration || (frames.length / playbackSpeed);
+4773:                                    const idx = Math.floor(seekTime * playbackSpeed);
+4779:                                        setPlayheadProgress(p); // Progress matches where we clicked
+4781:                                        if (isPlaying && audioBuffer) {
+4782:                                            playAudioFrom(nextIdx / playbackSpeed);
+4783:                                        } else if (!isPlaying && audioBuffer) {
+4789:                                playheadPosition={
+4790:                                    isPlaying 
+4791:                                        ? playheadProgress 
+4792:                                        : (currentFrameIndex / playbackSpeed) / Math.max(0.001, audioBuffer?.duration || (frames.length / playbackSpeed))
+4795:                                frameDuration={1 / playbackSpeed}
+4929:                                <Play size={16} fill="currentColor"/> {t('Render Animation')}
+4965:                                onClick={() => { setIsShowingPreview(false); setIsPlaying(false); setExportedFile(null); }} 
+4981:                                        autoPlay 
+5031:                                            setIsPlaying(true);
+5090:                                                    isPlaying={true}     // Force PLAY mode to render the raw image not canvas context

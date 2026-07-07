@@ -1,0 +1,12 @@
+{
+  "seller_fhgv": {
+    "id": "seller_fhgv",
+    "sellerId": "seller_fhgv",
+    "email": "fhgv@gmail.com",
+    "payout": 0,
+    "bankName": "Unit / Moniepoint",
+    "bankOwnerName": "",
+    "accountNumber": "",
+    "updatedAt": "2026-06-24T07:30:08.806Z"
+  }
+}

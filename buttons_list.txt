@@ -1,0 +1,71 @@
+3378:                    <button 
+3403:                        <button 
+3410:                        <button 
+3417:                        <button 
+3424:                        <button 
+3436:                        <button
+3443:                        <button
+3466:                        <button 
+3484:                        <button 
+3499:                        <button 
+3515:                        <button 
+3526:                            <button
+3548:                                        <button onClick={() => setShowRulerMenu(false)} className="text-gray-500 hover:text-white"><X size={14}/></button>
+3551:                                        <button 
+3568:                        <button 
+3578:                        <button 
+3589:                            <button 
+3620:                                <button 
+3638:                                    <button 
+3667:                        <button 
+3682:                            <button 
+3729:                                    <button 
+3740:                                    <button 
+3786:                            <button 
+3793:                            <button 
+3802:                        <button 
+3823:                            <button 
+3842:                    <button 
+3853:                                <button onClick={() => setShowHeaderMenu(false)} className="text-gray-500 hover:text-white"><X size={14}/></button>
+3859:                        <button 
+3878:                        <button 
+3888:                        <button 
+3900:                        <button 
+3906:                        <button 
+3954:                                <button onClick={() => setIsRiggingMode(false)} className="text-gray-500 hover:text-red-400"><X size={10}/></button>
+3955:                                <button onClick={applyRigging} className="text-green-500 hover:text-green-400"><Check size={10}/></button>
+4070:                            <button onClick={() => setIsSettingsOpen(false)}><X size={14} className="text-gray-500 hover:text-white"/></button>
+4130:                                    <button 
+4160:                            <button onClick={() => setShowLayersPanel(false)}><X size={14} className="text-gray-500 hover:text-white"/></button>
+4164:                                <button
+4173:                                        <button 
+4183:                                        <button 
+4235:                                                <button 
+4263:                                            <button onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }} className={`p-1 rounded ${layer.visible ? 'text-gray-400 hover:text-white' : 'text-red-500'}`}>
+4266:                                            <button onClick={(e) => { e.stopPropagation(); duplicateLayer(layer.id); }} className="p-1 text-gray-600 hover:text-blue-400" title="Duplicate Layer"><Copy size={12}/></button>
+4267:                                            <button onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }} className="p-1 text-gray-600 hover:text-red-400"><Trash2 size={12}/></button>
+4275:                            <button onClick={addLayer} className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white rounded-lg py-3 text-xs font-black tracking-wide shadow-lg shadow-red-900/20 transition-all active:scale-95">
+4416:                                                            <button 
+4669:                        <button onClick={addFrame} className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all whitespace-nowrap active:scale-95">
+4672:                        <button onClick={copyFrame} className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all whitespace-nowrap active:scale-95">
+4675:                        <button onClick={deleteFrame} className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black text-red-400 hover:text-red-300 bg-red-900/10 hover:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-500/10 transition-all whitespace-nowrap active:scale-95">
+4679:                        <button 
+4686:                        <button 
+4692:                        <button 
+4723:                    <button 
+4756:                        <button onClick={addFrame} className="shrink-0 h-full aspect-video rounded-lg border-2 border-dashed border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5 flex items-center justify-center text-gray-600 hover:text-cyan-400 transition-all">
+4833:                            <button 
+4840:                            <button 
+4848:                        <button 
+4864:                            <button onPointerDownCapture={(e)=>e.stopPropagation()} onClick={() => setShowOnionSkinMenu(false)} className="text-gray-500 hover:text-white p-1 bg-white/5 rounded-full cursor-pointer"><X size={14}/></button>
+4893:                            <button onClick={() => setIsExportMenuOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+4901:                                    <button 
+4908:                                    <button 
+4915:                                    <button 
+4925:                            <button 
+4964:                            <button 
+5000:                                    <button 
+5028:                                    <button 
+5162:                            <button onClick={() => setShowCompactFrames(false)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+5200:                                            <button 
+5221:                                            <button 

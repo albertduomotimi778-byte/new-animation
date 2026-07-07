@@ -1,0 +1,14 @@
+1195:        if (thumbnailTimeoutRef.current) cancelAnimationFrame(thumbnailTimeoutRef.current);
+1196:        thumbnailTimeoutRef.current = requestAnimationFrame(updateFrameThumbnail);
+2861:                // Duration of one full animation loop in seconds
+2868:                    // Animation looped, restart audio to maintain sync
+2869:                    // This is extra important for 1-frame animations where targetFrame doesn't change
+2941:            playbackFrameId.current = requestAnimationFrame(runPlayback);
+2944:        playbackFrameId.current = requestAnimationFrame(runPlayback);
+2946:            cancelAnimationFrame(playbackFrameId.current);
+4900:                            <h3 className="font-semibold text-white">{t('Export Animation')}</h3>
+4937:                                <Play size={16} fill="currentColor"/> {t('Render Animation')}
+4996:                                        alt="Animation Preview"
+5012:                                            const baseName = settings?.name?.replace(/\s+/g, '_') || "animation";
+5028:                                                triggerLocalToast("ANIMATION SAVED TO DEVICE / DOWNLOADING");
+5058:                                        <div className="text-gray-400 font-medium tracking-wide">{t('Rendering Animation...')}</div>

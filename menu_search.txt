@@ -1,0 +1,12 @@
+  const [easingMenuOpen, setEasingMenuOpen] = useState(false);
+  const [easingMenuPos, setEasingMenuPos] = useState({x: 0, y: 0});
+  const [isSelectionMenuOpen, setIsSelectionMenuOpen] = useState(false);
+      setEasingMenuPos({ x: e.clientX, y: e.clientY });
+      setEasingMenuOpen(true);
+          setEasingMenuOpen(false);
+          <EasingEditor isOpen={easingMenuOpen} onClose={() => setEasingMenuOpen(false)} onSelect={handleEasingSelect} position={easingMenuPos} currentEasing={currentKeyframe ? currentKeyframe.easing : EasingType.Linear} />
+                  <button onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)} className="lg:hidden p-2 text-gray-400 hover:text-white"><Menu size={20}/></button>
+                                              <button onClick={() => setIsSelectionMenuOpen(!isSelectionMenuOpen)} className="w-full flex items-center justify-between bg-[#111] border border-white/10 hover:border-cyan-500/50 rounded-lg px-3 py-2 text-[10px] font-bold text-white transition-colors">
+                                                  <ChevronDown size={12} className={`text-gray-500 transition-transform ${isSelectionMenuOpen ? 'rotate-180' : ''}`} />
+                                              {isSelectionMenuOpen && (
+                                                              <div key={p.id} onClick={() => { setPropertyTarget(p.id); setSelectedPartIds([p.id]); setIsSelectionMenuOpen(false); }} className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${isSelected ? 'bg-cyan-500/10' : 'hover:bg-white/5'}`}>

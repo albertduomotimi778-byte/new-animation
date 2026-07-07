@@ -1,0 +1,29 @@
+401:             const durationDays = pendingPlan === 'daily' ? 1 : 
+406:             expiryDate.setDate(expiryDate.getDate() + durationDays);
+714:          vocalTrack.buffer?.duration || 0, 
+715:          instTrack.buffer?.duration || 0
+940:  // Check for offline usage duration
+2078:            audioDuration: playbackState.duration,
+2092:  }, [currentProjectId, projectName, characters, activeSceneCharacterId, keyframes, lipSyncKeyframes, cameraTransform, characterFiltersMap, lightSources, backgroundTransform, linkBgToCamera, ambientLightLevel, visemeMap, canvasBgColor, isCanvasTransparent, backgroundImage, extraDuration, projectType, frameData, frameSettings, vocalTrack, instTrack, playbackState.duration]);
+2163:        audioDuration: playbackState.duration,
+2186:  }, [characters, activeSceneCharacterId, keyframes, lipSyncKeyframes, frameData, frameSettings, cameraTransform, characterFiltersMap, lightSources, backgroundTransform, linkBgToCamera, ambientLightLevel, visemeMap, canvasBgColor, isCanvasTransparent, backgroundImage, extraDuration, projectName, currentProjectId, projectType, vocalTrack, instTrack, playbackState.duration]);
+2278:                      transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}
+2741:                                <div className={`absolute inset-y-0 left-0 z-40 w-full sm:w-80 portrait:w-full portrait:sm:w-80 landscape:w-[260px] lg:landscape:w-[320px] bg-[#111] border-r border-white/10 flex flex-col transform transition-transform duration-300 ${isDesktopLike ? 'lg:relative lg:translate-x-0' : 'lg:relative lg:translate-x-0'} ${isLeftPanelOpen || isDesktopLike ? 'translate-x-0' : '-translate-x-full'} ${isDesktopLike ? 'relative' : ''}`}>
+2832:                <div className="flex-1 bg-[#050505] relative flex flex-col min-w-0 transition-all duration-300">
+2835:                            <div id="animato-render-stage" className={`shrink-0 relative shadow-2xl overflow-hidden ring-1 ring-white/10 rounded-lg transition-all duration-300 ease-in-out ${isCanvasTransparent && !isPresentationMode ? 'bg-[url(https://upload.wikimedia.org/wikipedia/commons/e/e9/Transparency_checkered_background.png)]' : ''}`} style={{ width: `min(100cqw, 100cqh * ${(Number(aspectRatio.split('/')[0]) || 16) / (Number(aspectRatio.split('/')[1]) || 9)})`, height: `min(100cqh, 100cqw / ${(Number(aspectRatio.split('/')[0]) || 16) / (Number(aspectRatio.split('/')[1]) || 9)})`, backgroundColor: isCanvasTransparent ? 'transparent' : canvasBgColor }}>
+2853:                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-75 ease-linear" style={{ transform: `translate(${shadowConfig.offsetX}px, ${shadowConfig.offsetY}px) skewX(${shadowConfig.skewX}deg) scaleY(${shadowConfig.scaleY})`, opacity: shadowConfig.opacity, filter: `blur(${shadowConfig.blur}px)` }}>
+2858:                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-75 ease-linear" style={{ transform: `translate(${depthShadowConfig.offsetX}px, ${depthShadowConfig.offsetY}px)`, opacity: depthShadowConfig.opacity, }}>
+2900:                    <div className="w-72 landscape:w-60 lg:landscape:w-72 portrait:w-72 bg-[#0c0c0e] border-l border-white/10 flex flex-col relative animate-in slide-in-from-right duration-300 shrink-0 z-40">
+3029:          <div className={`${isPresentationMode ? 'h-0 min-h-0 overflow-hidden border-t-0' : 'h-[28vh] min-h-[200px] portrait:min-h-[200px] landscape:min-h-[140px] landscape:h-[140px] lg:landscape:min-h-[200px] lg:landscape:h-[28vh] border-t border-white/10'} bg-[#080808] flex flex-col shrink-0 relative z-30 ${isPresentationMode ? 'pb-0' : 'pb-8 lg:pb-2'} shadow-[0_-5px_30px_rgba(0,0,0,0.5)] transition-all duration-300`}>
+3082:                                        duration={safeDuration} 
+3092:                                            duration={safeDuration} 
+3124:                                            duration={safeDuration} 
+3143:                                                      duration={safeDuration} 
+3165:                                            duration={safeDuration} 
+3341:                                                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#151515] border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar animate-in zoom-in-95 duration-100">
+3818:        duration={playbackState.duration || 0}
+3850:        audioDuration={playbackState.duration || 0} 
+3861:        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60  animate-in fade-in duration-200">
+3863:            <div className="w-[280px] max-w-[90%] bg-[#111] border border-white/10 rounded-xl p-4 shadow-2xl flex flex-col gap-4 transform scale-100 animate-in zoom-in-95 duration-200">
+3889:        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60  animate-in fade-in duration-200">
+3890:            <div className="w-[280px] max-w-[90%] bg-[#111] border border-white/10 rounded-xl p-4 shadow-2xl flex flex-col gap-4 transform scale-100 animate-in zoom-in-95 duration-200">

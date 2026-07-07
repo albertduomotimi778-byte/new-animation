@@ -1,0 +1,46 @@
+93:    const hasBones = layer.bones && layer.bones.length > 0;
+97:    // However, if it HAS bones, we WANT to show the warped version from PuppetWarp even when not in rigging mode
+99:    if (!isPlaying && isEditingThisLayer && !hasBones) {
+118:                {hasBones ? (
+125:                        bones={layer.bones}
+143:            {hasBones ? (
+150:                    bones={layer.bones}
+450:    const [riggingBones, setRiggingBones] = useState<Bone[]>([]);
+454:    const [activeTool, setActiveTool] = useState<'PEN' | 'ERASER' | 'FILL' | 'LASSO' | 'BONES' | 'RULER'>('PEN');
+1051:        const bonesHash = layer?.bones ? JSON.stringify(layer.bones) + JSON.stringify(layer.boneTransforms || {}) : '';
+1052:        const currentRenderKey = `${layer?.dataUri}_${bonesHash}`;
+1068:                if (layer.bones && layer.bones.length > 0) {
+1069:                     drawWarpedImage(ctx, img, canvas.width, canvas.height, layer.bones, layer.boneTransforms || {}, layer.rigType || 'MESH');
+1126:                if (layer.bones && layer.bones.length > 0) {
+1129:                    drawWarpedImage(ctx, img, canvasSize.width, canvasSize.height, layer.bones, layer.boneTransforms || {}, layer.rigType || 'MESH');
+1175:        // Note: we clear bones on save in line 824 which matches the empty bonesHash in loadActiveLayerToCanvas
+1186:                { ...l, dataUri: newDataUri, bones: undefined, boneTransforms: undefined } : l
+1317:                                if (layer.bones && layer.bones.length > 0) {
+1318:                                    drawWarpedImage(tempCtx, img, tempCanvas.width, tempCanvas.height, layer.bones, layer.boneTransforms || {}, layer.rigType || 'MESH');
+1363:                const newBones = layer.bones?.map(b => ({
+1369:                if (!layer.dataUri) return { ...layer, bones: newBones };
+1382:                        resolve({ ...layer, dataUri: c.toDataURL(), bones: newBones });
+1384:                    img.onerror = () => resolve({ ...layer, bones: newBones });
+1635:                            bones: undefined,
+2353:        const isRigged = currentLayer?.bones && currentLayer.bones.length > 0;
+2385:                    drawWarpedImage(sCtx, img, canvas.width, canvas.height, currentLayer.bones!, currentLayer.boneTransforms || {}, currentLayer.rigType || 'MESH');
+2466:            setRiggingBones(layer.bones ? safeDeepClone(layer.bones) : []);
+2471:            setRiggingBones([]);
+2504:                    bones: riggingBones ? riggingBones.map(b => ({...b})) : [], 
+2524:        setRiggingBones([]);
+2540:            bones: undefined,
+2573:            bones: l.bones ? safeDeepClone(l.bones) : undefined,
+2932:                        if (l.bones && l.bones.length > 0 && nextLayer?.bones && l.boneTransforms && nextLayer.boneTransforms) {
+2935:                            l.bones.forEach(b => {
+3069:                        const hasBones = layer.bones && layer.bones.length > 0;
+3070:                        if (hasBones) {
+3072:                            drawWarpedImage(rCtx, img, canvasSize.width, canvasSize.height, layer.bones!, currentTransforms, layer.rigType || 'MESH');
+3612:                                        const isRigged = currentLayer.bones && currentLayer.bones.length > 0;
+3623:                                                    drawWarpedImage(bCtx, img, canvasSize.width, canvasSize.height, currentLayer.bones!, currentLayer.boneTransforms || {}, currentLayer.rigType || 'MESH');
+4659:                                    bones={riggingBones} 
+4660:                                    onBonesChange={(newBones) => {
+4661:                                        setRiggingBones(newBones);
+4662:                                        if (activeBoneId && !newBones.find(b => b.id === activeBoneId)) {
+4670:                                    onBoneSelect={setActiveBoneId}
+4849:                            <p className="text-gray-400 text-xs mt-1">{t('Choose how the bones influence the drawing.')}</p>
+4864:                                <div className="text-gray-400 text-[10px] leading-tight">{t('Best for gooey, stretchy objects like cloaks, tails, or slime. Influences bleed organically between bones.')}</div>

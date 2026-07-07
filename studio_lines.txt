@@ -1,0 +1,13 @@
+458:  const [isCharacterStudioModalOpen, setIsCharacterStudioModalOpen] = useState(false);
+2002:            appName: "Animato Studio",
+2109:              : "Subscription activated. Welcome to the Premium Studio."}
+2281:                      <p className="text-cyan-500 font-bold tracking-widest uppercase text-sm">{t('Loading Rigging Studio...')}</p>
+2288:        {isCharacterStudioModalOpen && !isCharacterBuilderOpen && (
+2304:                                <UserCog className="text-cyan-500"/> {t('Rigging Studio')}
+2310:                            onClick={() => setIsCharacterStudioModalOpen(false)} 
+2346:                                                setIsCharacterStudioModalOpen(false);
+2415:                                            setIsCharacterStudioModalOpen(false);
+2441:                setIsCharacterStudioModalOpen(false);
+2457:                setIsCharacterStudioModalOpen(false);
+2498:                      setIsCharacterStudioModalOpen(true);
+3247:                                              <div className="bg-amber-900/10 border border-amber-500/20 p-4 rounded-lg text-amber-500 text-xs text-center">{t('No rigged parts found.')}<br/><button onClick={()=>setIsCharacterBuilderOpen(true)} className="underline font-bold mt-2">{t('Open Rigging Studio')}</button></div>

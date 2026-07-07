@@ -1,0 +1,62 @@
+142:    const userStr = localStorage.getItem('app_user');
+143:    if (!userStr) {
+147:       const u = JSON.parse(userStr);
+148:       // Force legacy users to re-auth
+150:          localStorage.removeItem('app_user');
+162:    const userStr = localStorage.getItem('app_user');
+163:    if (userStr) {
+165:        const u = JSON.parse(userStr);
+179:      const userStr = localStorage.getItem('app_user');
+180:      if (userStr) {
+182:          const u = JSON.parse(userStr);
+200:  const [user, setUser] = useState<any>(() => {
+201:    const userStr = localStorage.getItem('app_user');
+202:    if (!userStr) return null;
+204:      const u = JSON.parse(userStr);
+215:    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+271:    if (user) {
+272:      if (user.language) {
+273:        setLanguage(user.language);
+286:          const data = await backend.syncUser(user.email);
+287:          if (data.success && data.user) {
+288:            const oldUser = user;
+289:            localStorage.setItem('app_user', JSON.stringify(data.user));
+290:            setUser(data.user);
+300:              if (data.user.subscription_status === 'none' || data.user.subscription_status === 'expired') {
+320:  }, [user?.email, isVerifyingPayment, showSignIn]); 
+326:    if (debugExpired === 'true' && user && !isVerifyingPayment) {
+327:        if (user.subscription_status !== 'expired') {
+328:            const updated = { ...user, subscription_status: 'expired' };
+330:            localStorage.setItem('app_user', JSON.stringify(updated));
+337:    if (!user || user.subscription_status !== 'active' || !user.subscription_expiry) return;
+340:        const expiryDate = new Date(user.subscription_expiry);
+342:            const updatedUser = { ...user, subscription_status: 'expired' };
+343:            localStorage.setItem('app_user', JSON.stringify(updatedUser));
+351:  }, [user, showSubscription]);
+367:      // If user cancelled, clear URL and abort
+370:         if (!cancelEmail && user?.email) cancelEmail = user.email;
+373:                if (user && user.email === cancelEmail) {
+374:                    const updated = { ...user, subscription_status: 'none', subscription_type: 'none', subscription_expiry: null };
+376:                    localStorage.setItem('app_user', JSON.stringify(updated));
+397:             const userStr = localStorage.getItem('app_user');
+398:             let u = userStr ? JSON.parse(userStr) : null;
+430:                 localStorage.setItem('app_user', JSON.stringify(u));
+457:                if (data.user) {
+458:                    localStorage.setItem('app_user', JSON.stringify(data.user));
+459:                    setUser(data.user);
+739:      // 2. Do not override user if they are currently manipulating a control
+2133:                if (user?.email) {
+2134:                    backend.syncUser(user.email).then(data => {
+2135:                        if (data.success && data.user) {
+2136:                            localStorage.setItem('app_user', JSON.stringify(data.user));
+2137:                            setUser(data.user);
+2194:                <span className="text-xs text-white truncate ml-4">{pendingEmail || user?.email}</span>
+2226:    // 1. Keep globally persistent app preferences (NOT user data)
+2230:    // 2. Clear All Data to properly sign out the user
+2288:          <PremiumSignIn onComplete={(userData) => {
+2290:            setUser(userData);
+2292:            if (userData?.subscription_status === 'none' || userData?.subscription_status === 'expired') {
+2299:          user?.subscription_status === 'expired' || isExpired ? (
+2301:              user={user} 
+2306:              user={user} 
+2316:            user={user}

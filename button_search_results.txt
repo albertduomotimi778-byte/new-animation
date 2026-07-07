@@ -1,0 +1,23 @@
+5672-                                  <div className="flex items-center gap-2 text-xs font-bold text-gray-300 uppercase tracking-widest">
+5673-                                    <LucideIcons.Box size={14} className="text-cyan-500" /> {t("2.5D HEAD TURN")}
+5674-                                  </div>
+5675-                                  <div className="bg-[#111] p-3 rounded-2xl border border-white/5 grid grid-cols-3 gap-3 shadow-inner">
+5676-                                    {[
+5677:                                      { l: '2.5D LEFT', v: -1, i: <FaceLeftIcon size={20} className="mx-auto" /> }, 
+5678-                                      { l: 'FRONT', v: 0, i: <FaceCenterIcon size={20} className="mx-auto" /> }, 
+5679-                                      { l: '2.5D RIGHT', v: 1, i: <FaceRightIcon size={20} className="mx-auto" /> }
+5680-                                    ].map(dir => {
+5681-                                        const active = characterFilters?.headTurn === dir.v;
+5682-                                        return (
+--
+7687-                                  <div className="flex items-center gap-2 text-xs font-bold text-gray-300 uppercase tracking-widest">
+7688-                                    <LucideIcons.Box size={14} className="text-cyan-500" /> {t("2.5D HEAD TURN")}
+7689-                                  </div>
+7690-                                  <div className="bg-[#111] p-3 rounded-2xl border border-white/5 grid grid-cols-3 gap-3 shadow-inner">
+7691-                                    {[
+7692:                                      { l: '2.5D LEFT', v: -1, i: <FaceLeftIcon size={20} className="mx-auto" /> }, 
+7693-                                      { l: 'FRONT', v: 0, i: <FaceCenterIcon size={20} className="mx-auto" /> }, 
+7694-                                      { l: '2.5D RIGHT', v: 1, i: <FaceRightIcon size={20} className="mx-auto" /> }
+7695-                                    ].map(dir => {
+7696-                                        const active = characterFilters?.headTurn === dir.v;
+7697-                                        return (
