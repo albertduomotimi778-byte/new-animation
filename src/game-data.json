@@ -1,40 +1,40 @@
 {
   "scenes": [
     {
-      "name": "Scene 1",
-      "id": "scene_1"
+      "id": "scene_1",
+      "name": "Scene 1"
     }
   ],
   "sceneElements": {
     "scene_1": [
       {
+        "x": 406,
+        "width": 50,
+        "layerId": "layer_1",
         "type": "btn",
         "height": 50,
+        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
         "buttonId": "btn_right",
-        "x": 406,
-        "layerId": "layer_1",
-        "y": 196,
-        "url": null,
-        "width": 50,
         "id": "el_1783399496429",
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png"
+        "url": null,
+        "y": 196
       }
     ]
   },
   "sceneEvents": {
     "scene_1": [
       {
+        "id": "ev_1",
         "conditions": [
           {
-            "type": "pressed",
-            "target": "el_1783399496429"
+            "target": "el_1783399496429",
+            "type": "pressed"
           }
         ],
-        "id": "ev_1",
         "actions": [
           {
-            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });",
-            "type": "js"
+            "type": "js",
+            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });"
           }
         ]
       }
@@ -44,28 +44,28 @@
   "uiButtons": [
     {
       "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
-      "name": "Left Button",
-      "id": "btn_left",
-      "type": "shape"
-    },
-    {
-      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-      "id": "btn_right",
-      "name": "Right Button",
-      "type": "shape"
-    },
-    {
-      "name": "Jump Button",
       "type": "shape",
-      "id": "btn_jump",
-      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png"
+      "name": "Left Button",
+      "id": "btn_left"
+    },
+    {
+      "name": "Right Button",
+      "id": "btn_right",
+      "type": "shape",
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png"
+    },
+    {
+      "type": "shape",
+      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png",
+      "name": "Jump Button",
+      "id": "btn_jump"
     }
   ],
   "environments": [],
   "layers": [
     {
-      "name": "Base Layer",
-      "id": "layer_1"
+      "id": "layer_1",
+      "name": "Base Layer"
     }
   ],
   "stageBgColor": "#111111",
