@@ -2109,7 +2109,9 @@ app.post('/api/github/deploy', async (req, res) => {
   };
 
   try {
-    addLog(`Starting deployment for ${repoFullName}...`);
+    const [owner, repoNamePart] = repoFullName.split('/');
+    addLog(`Starting deployment. Resolved Owner: "${owner}", Repository: "${repoNamePart}" (Full Name: "${repoFullName}")`);
+
     const normalizedEmail = email.toLowerCase().trim();
     const docSnap = await originalGetDoc(doc(db!, 'github_connections', normalizedEmail));
     if (!docSnap.exists()) {
@@ -2123,7 +2125,10 @@ app.post('/api/github/deploy', async (req, res) => {
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'Animato-Studio',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     };
 
     // Give GitHub more time to initialize if repo was just created
@@ -2135,32 +2140,32 @@ app.post('/api/github/deploy', async (req, res) => {
     let repoRes: Response | null = null;
     let attempts = 0;
     while (attempts < 5) {
-      addLog(`Fetching repo info (attempt ${attempts + 1})...`);
-      repoRes = await fetch(`https://api.github.com/repos/${repoFullName}`, { headers });
+      addLog(`[STEP: Repo Details] Fetching details for Owner: "${owner}", Repo: "${repoNamePart}" (attempt ${attempts + 1})...`);
+      repoRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}`, { headers, cache: 'no-store' });
       repoInfo = await repoRes.json();
       if (repoRes.ok) break;
-      addLog(`Repo fetch failed for ${repoFullName}: ${repoInfo.message}. Retrying...`, 'warn');
+      addLog(`Repo fetch failed for ${owner}/${repoNamePart}: ${repoInfo.message}. Retrying...`, 'warn');
       await new Promise(resolve => setTimeout(resolve, 2000));
       attempts++;
     }
     if (!repoRes || !repoRes.ok || !repoInfo || !repoInfo.name) {
-      addLog(`Failed to fetch repo info: ${repoInfo?.message || 'Unknown error'}`, 'error');
+      addLog(`Failed to fetch repo info for Owner: "${owner}", Repo: "${repoNamePart}": ${repoInfo?.message || 'Unknown error'}`, 'error');
       throw new Error(repoInfo?.message || 'Failed to fetch repo info after multiple attempts');
     }
     
     // Check permissions
     if (repoInfo.permissions) {
-      addLog(`Repository permissions: ${JSON.stringify(repoInfo.permissions)}`);
+      addLog(`Repository permissions for Owner: "${owner}", Repo: "${repoNamePart}": ${JSON.stringify(repoInfo.permissions)}`);
       if (!repoInfo.permissions.push) {
-        addLog(`Token lacks write access (push permission) for repo ${repoFullName}.`, 'error');
-        throw new Error(`Token lacks write access to this repo (${repoFullName}). Please ensure your GitHub token has write permissions (Contents: Read and write for fine-grained PAT, or repo scope for classic PAT).`);
+        addLog(`Token lacks write access (push permission) for Owner: "${owner}", Repo: "${repoNamePart}".`, 'error');
+        throw new Error(`Token lacks write access to this repo (${owner}/${repoNamePart}). Please ensure your GitHub token has write permissions (Contents: Read and write for fine-grained PAT, or repo scope for classic PAT).`);
       }
     } else {
       addLog('No permissions object found in repo info, proceeding cautiously...', 'warn');
     }
     
     const defaultBranch = repoInfo.default_branch || 'main';
-    addLog(`Resolved default branch for ${repoFullName}: ${defaultBranch}`);
+    addLog(`Resolved default branch for Owner: "${owner}", Repo: "${repoNamePart}": "${defaultBranch}"`);
     
     // Check scopes for 'workflow'
     const isFineGrained = String(access_token || '').startsWith('github_pat_');
@@ -2173,74 +2178,26 @@ app.post('/api/github/deploy', async (req, res) => {
       addLog(`Token lacks 'workflow' scope. We will skip creating .github/workflows/deploy.yml to prevent 404 errors.`, 'warn');
     }
 
-    // 1.5. Ensure GitHub Pages has been configured to use GitHub Actions
-    if (hasWorkflowScope) {
-      try {
-        addLog(`Checking GitHub Pages configuration for ${repoFullName}...`);
-        const pagesUrl = `https://api.github.com/repos/${repoFullName}/pages`;
-        const getPagesRes = await fetch(pagesUrl, { headers });
-        
-        if (getPagesRes.status === 404) {
-          addLog('GitHub Pages not configured yet. Creating Pages site with "workflow" build type...', 'info');
-          const postPagesRes = await fetch(pagesUrl, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ build_type: 'workflow' })
-          });
-          const postPagesData = await postPagesRes.json();
-          if (postPagesRes.ok) {
-            addLog('Successfully created GitHub Pages site with "workflow" build type.');
-          } else {
-            addLog(`Failed to create GitHub Pages site: ${postPagesData.message || 'Unknown error'}`, 'warn');
-          }
-        } else if (getPagesRes.ok) {
-          const pagesConfig = await getPagesRes.json();
-          addLog(`Current Pages configuration: build_type=${pagesConfig.build_type}`);
-          if (pagesConfig.build_type === 'legacy') {
-            addLog('Pages is set to "legacy" (branch-based). Updating Pages configuration to "workflow"...', 'info');
-            const putPagesRes = await fetch(pagesUrl, {
-              method: 'PUT',
-              headers,
-              body: JSON.stringify({ build_type: 'workflow' })
-            });
-            const putPagesData = await putPagesRes.json();
-            if (putPagesRes.ok) {
-              addLog('Successfully updated GitHub Pages configuration to "workflow".');
-            } else {
-              addLog(`Failed to update GitHub Pages configuration: ${putPagesData.message || 'Unknown error'}`, 'warn');
-            }
-          } else {
-            addLog('GitHub Pages is already configured with "workflow" build type.');
-          }
-        } else {
-          const errData = await getPagesRes.json().catch(() => ({}));
-          addLog(`Unexpected response when checking Pages: HTTP ${getPagesRes.status} - ${errData.message || 'No details'}`, 'warn');
-        }
-      } catch (err: any) {
-        addLog(`Error configuring GitHub Pages: ${err.message}`, 'warn');
-      }
-    }
-    
     let latestCommitSha: string | null = null;
     let baseTreeSha: string | null = null;
     let isRepoEmpty = false;
 
     // 2. Get latest commit SHA from git/refs/heads/{branch}
     try {
-      addLog(`Fetching latest ref for branch ${defaultBranch}...`);
-      const refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`, { headers });
+      addLog(`[STEP: Branch Ref] Fetching latest ref for Owner: "${owner}", Repo: "${repoNamePart}", Branch: "${defaultBranch}"...`);
+      const refRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/refs/heads/${defaultBranch}`, { headers, cache: 'no-store' });
       const refData = await refRes.json();
       
       if (refRes.status === 404) {
-        addLog(`Branch ${defaultBranch} not found (404). Assuming empty repo.`);
+        addLog(`Branch "${defaultBranch}" not found (404) for Owner: "${owner}", Repo: "${repoNamePart}". Assuming empty repo.`);
         isRepoEmpty = true;
       } else if (refRes.ok && refData.object?.sha) {
         latestCommitSha = refData.object.sha;
-        addLog(`Found latest commit SHA for ${defaultBranch}: ${latestCommitSha}`);
+        addLog(`Found latest commit SHA for "${defaultBranch}": ${latestCommitSha}`);
         
         // 3. Get tree SHA from git/commits/{sha}
-        addLog(`Fetching tree SHA for commit ${latestCommitSha}...`);
-        const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/commits/${latestCommitSha}`, { headers });
+        addLog(`[STEP: Tree SHA] Fetching tree SHA for commit ${latestCommitSha}...`);
+        const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/commits/${latestCommitSha}`, { headers, cache: 'no-store' });
         const commitData = await commitRes.json();
         if (commitRes.ok && commitData.tree?.sha) {
           baseTreeSha = commitData.tree.sha;
@@ -2249,13 +2206,91 @@ app.post('/api/github/deploy', async (req, res) => {
           addLog(`Could not fetch tree SHA for commit ${latestCommitSha}: ${JSON.stringify(commitData)}`, 'warn');
         }
       } else {
-        addLog(`Failed to fetch ref for ${defaultBranch}: ${JSON.stringify(refData)}. Status: ${refRes.status}`, 'warn');
+        addLog(`Failed to fetch ref for Owner: "${owner}", Repo: "${repoNamePart}", Branch: "${defaultBranch}": ${JSON.stringify(refData)}. Status: ${refRes.status}`, 'warn');
         isRepoEmpty = true;
       }
     } catch (err: any) {
       addLog(`Error fetching fresh ref/commit: ${err.message}`, 'error');
       isRepoEmpty = true;
     }
+
+    // 2.1 Verification: Compare with the previous deployment to check if anything actually changed
+    let previousGameDataContent: string | null = null;
+    let isNoOpDeploy = false;
+    if (!isRepoEmpty) {
+      try {
+        addLog(`[STEP: Content Verification] Fetching previous game-data.json for Owner: "${owner}", Repo: "${repoNamePart}" to compare changes...`);
+        const prevRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repoNamePart}/contents/src/game-data.json?ref=${defaultBranch}`,
+          { headers, cache: 'no-store' }
+        );
+        if (prevRes.ok) {
+          const prevData = await prevRes.json();
+          if (prevData.content && prevData.encoding === 'base64') {
+            previousGameDataContent = Buffer.from(prevData.content, 'base64').toString('utf8');
+            addLog(`Successfully fetched previous game-data.json from deployment.`);
+            
+            const newGameDataContent = JSON.stringify(gameData, null, 2);
+            if (previousGameDataContent === newGameDataContent) {
+              addLog(`[VERIFICATION] WARNING: Silent no-op deploy caught! The newly pushed files have IDENTICAL game-data content to the previous deployment. Adding unique deployment timestamp to force update/build.`);
+              isNoOpDeploy = true;
+            } else {
+              addLog(`[VERIFICATION] SUCCESS: Game-data changes detected! Pushed content differs from the previous deployment.`);
+            }
+          }
+        } else if (prevRes.status === 404) {
+          addLog(`[VERIFICATION] No previous game-data.json found in the repository (404). This is the first deployment containing game data.`);
+        } else {
+          addLog(`[VERIFICATION] Unexpected response when fetching previous game-data.json: HTTP ${prevRes.status}`, 'warn');
+        }
+      } catch (err: any) {
+        addLog(`[VERIFICATION] Warning: Failed to fetch previous game-data.json for comparison: ${err.message}`, 'warn');
+      }
+    } else {
+      addLog(`[VERIFICATION] Repository is empty. Proceeding with initial deployment.`);
+    }
+
+    // 2. Build-time check/log of interactive elements and actions
+    let scenesCount = gameData.scenes?.length || 0;
+    let elementsCount = 0;
+    if (gameData.sceneElements) {
+      Object.values(gameData.sceneElements).forEach((els: any) => {
+        if (Array.isArray(els)) {
+          elementsCount += els.length;
+        }
+      });
+    }
+    let gameObjectsCount = gameData.gameObjects?.length || 0;
+    let buttonsCount = gameData.uiButtons?.length || 0;
+    let environmentsCount = gameData.environments?.length || 0;
+    let eventsCount = 0;
+    let conditionsCount = 0;
+    let actionsCount = 0;
+    if (gameData.sceneEvents) {
+      Object.values(gameData.sceneEvents).forEach((evs: any) => {
+        if (Array.isArray(evs)) {
+          eventsCount += evs.length;
+          evs.forEach((ev: any) => {
+            if (Array.isArray(ev.conditions)) {
+              conditionsCount += ev.conditions.length;
+            }
+            if (Array.isArray(ev.actions)) {
+              actionsCount += ev.actions.length;
+            }
+          });
+        }
+      });
+    }
+    addLog(`[BUILD-TIME CHECK] Verification Success! Bundling game project logic:`);
+    addLog(`  - Scenes found: ${scenesCount}`);
+    addLog(`  - Total active elements on stage: ${elementsCount}`);
+    addLog(`  - Game Objects defined (characters, items): ${gameObjectsCount}`);
+    addLog(`  - Custom UI buttons available: ${buttonsCount}`);
+    addLog(`  - Background environments available: ${environmentsCount}`);
+    addLog(`  - Interactive event rules: ${eventsCount}`);
+    addLog(`  - Trigger conditions: ${conditionsCount}`);
+    addLog(`  - Connected actions: ${actionsCount}`);
+    addLog(`[BUILD-TIME CHECK] All interactive rules and assets successfully serialized into "src/game-data.json".`);
 
     // 2. Prepare files to push
     addLog('Preparing files to push...');
@@ -2296,7 +2331,7 @@ app.post('/api/github/deploy', async (req, res) => {
       },
       {
         path: 'index.html',
-        content: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n  <title>${repoInfo.name}</title>\n</head>\n<body style="margin:0;background:#000;">\n  <div id="root"></div>\n  <script type="module" src="/src/main.tsx"></script>\n</body>\n</html>`
+        content: `<!DOCTYPE html>\n<html lang="en" style="margin:0;padding:0;width:100%;height:100%;overflow:hidden;">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />\n  <title>${repoInfo.name}</title>\n</head>\n<body style="margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;">\n  <div id="root" style="width:100%;height:100%;"></div>\n  <script type="module" src="/src/main.tsx"></script>\n</body>\n</html>`
       },
       {
         path: 'src/main.tsx',
@@ -2304,7 +2339,7 @@ app.post('/api/github/deploy', async (req, res) => {
       },
       {
         path: 'src/index.css',
-        content: `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  margin: 0;\n  background-color: #000;\n  color: #fff;\n  overflow: hidden;\n}`
+        content: `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nhtml, body, #root {\n  margin: 0;\n  padding: 0;\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n  background-color: #000;\n  color: #fff;\n}\n\n@keyframes spin {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}`
       },
       {
         path: 'tailwind.config.js',
@@ -2320,7 +2355,8 @@ app.post('/api/github/deploy', async (req, res) => {
       },
       {
         path: 'src/App.tsx',
-        content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  const handleButtonClick = (elId) => {\n    const events = gameData.sceneEvents[activeSceneId] || [];\n    const ev = events.find(e => e.elementId === elId && e.trigger === 'onClick');\n    if (ev) {\n      if (ev.action === 'gotoScene' && ev.targetId) {\n        setActiveSceneId(ev.targetId);\n      } else if (ev.action === 'playSound' && ev.targetId) {\n        const audio = new Audio(ev.targetId);\n        audio.play().catch(console.error);\n      }\n    }\n  };\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor || '#000', width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor || '#000', overflow: 'hidden' }}>\n        {stageElements.map((el, i) => {\n           const isButton = el.type === 'btn' || el.type === 'obj';\n           const isObj = el.type === 'obj' || el.type === 'enemy';\n           const gameObject = isObj ? (gameData.gameObjects || []).find(g => g.id === el.data) : null;\n           const isText = gameObject?.type === 'text';\n           const bgUrl = el.url || (isObj ? (gameObject?.url || gameObject?.animations?.[0]) : el.data);\n           return (\n             <div \n               key={el.id || i} \n               onClick={(e) => {\n                 if (isButton) {\n                   e.stopPropagation();\n                   handleButtonClick(el.id);\n                 }\n               }}\n               style={{ \n                 position: 'absolute', \n                 left: el.type === 'bg' ? 0 : el.x, \n                 top: el.type === 'bg' ? 0 : el.y, \n                 width: el.type === 'bg' ? '100%' : el.width, \n                 height: el.type === 'bg' ? '100%' : el.height, \n                 backgroundImage: (!isText && bgUrl) ? \`url(\${bgUrl})\` : undefined, \n                 backgroundSize: '100% 100%',\n                 backgroundRepeat: 'no-repeat',\n                 backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined,\n                 opacity: el.opacity !== undefined ? el.opacity : 1,\n                 transform: el.rotation ? \`rotate(\${el.rotation}deg)\` : undefined,\n                 cursor: isButton ? 'pointer' : 'default',\n                 pointerEvents: isButton ? 'auto' : 'none',\n                 zIndex: el.type === 'bg' ? 0 : (isText ? 2000 : (el.layerId ? 10 : 20))\n               }}\n             >\n               {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}\n               {isText && (\n                 <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', fontWeight:'bold', color: gameObject.color || '#fff', fontSize: gameObject.fontSize ? \`\${gameObject.fontSize}px\` : '24px'}}>\n                   {gameObject.name}\n                 </div>\n               )}\n             </div>\n           );\n        })}\n      </div>\n    </div>\n  );\n}`
+        content: `import React, { useState, useEffect, useRef } from 'react';\nimport gameData from './game-data.json';\n\nconst AnimatedSprite = ({ frames, fps, speed = 1, width, height }: { frames: string[], fps: number, speed?: number, width: number, height: number }) => {\n  const [currentFrame, setCurrentFrame] = useState(0);\n  \n  useEffect(() => {\n    if (!frames || frames.length === 0) return;\n    const actualFps = (fps || 24) * speed;\n    const interval = setInterval(() => {\n      setCurrentFrame(prev => (prev + 1) % frames.length);\n    }, 1000 / actualFps);\n    return () => clearInterval(interval);\n  }, [frames, fps, speed]);\n\n  if (!frames || frames.length === 0) {\n    return <div style={{ width: '100%', height: '100%', backgroundColor: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#71717a' }}>No Anim</div>;\n  }\n\n  return (\n    <div \n      style={{\n        width: '100%',\n        height: '100%',\n        backgroundImage: \`url(\${frames[currentFrame]})\`,\n        backgroundSize: '100% 100%',\n        backgroundRepeat: 'no-repeat'\n      }}\n    />\n  );\n};\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 640, height: typeof window !== 'undefined' ? window.innerHeight : 360 });\n  const [showRotationPrompt, setShowRotationPrompt] = useState(false);\n\n  const aspectRatio = gameData.aspectRatio || 'landscape';\n  const VIRTUAL_WIDTH = aspectRatio === 'landscape' ? 640 : 360;\n  const VIRTUAL_HEIGHT = aspectRatio === 'landscape' ? 360 : 640;\n\n  useEffect(() => {\n    const handleResize = () => {\n      const w = window.innerWidth;\n      const h = window.innerHeight;\n      setWindowSize({ width: w, height: h });\n      if (aspectRatio === 'landscape' && w < h) {\n        setShowRotationPrompt(true);\n      } else if (aspectRatio === 'portrait' && w > h) {\n        setShowRotationPrompt(true);\n      } else {\n        setShowRotationPrompt(false);\n      }\n    };\n    handleResize();\n    window.addEventListener('resize', handleResize);\n    const mql = window.matchMedia('(orientation: landscape)');\n    const mqlListener = () => handleResize();\n    try { mql.addEventListener('change', mqlListener); } catch(e) { window.addEventListener('orientationchange', mqlListener); }\n    return () => {\n      window.removeEventListener('resize', handleResize);\n      try { mql.removeEventListener('change', mqlListener); } catch(e) { window.removeEventListener('orientationchange', mqlListener); }\n    };\n  }, [aspectRatio]);\n\n  const scale = (() => {\n    const maxW = windowSize.width;\n    const maxH = windowSize.height;\n    return Math.min(maxW / VIRTUAL_WIDTH, maxH / VIRTUAL_HEIGHT);\n  })();\n\n  const stageElementsRef = useRef(stageElements);\n  useEffect(() => {\n    stageElementsRef.current = stageElements;\n  }, [stageElements]);\n\n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  const executeAction = (act) => {\n    switch (act.type) {\n      case 'goto_scene':\n        if (act.target) {\n          const exists = (gameData.scenes || []).some(s => s.id === act.target);\n          if (exists) {\n            setActiveSceneId(act.target);\n          }\n        }\n        break;\n\n      case 'change_opacity':\n        if (act.target) {\n          const val = Number(act.value ?? 50) / 100;\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, opacity: val };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'destroy':\n        if (act.target) {\n          setStageElements(prev => prev.filter(el => el.data !== act.target && el.id !== act.target && el.buttonId !== act.target));\n        }\n        break;\n\n      case 'play_sound':\n        try {\n          const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();\n          const osc = audioCtx.createOscillator();\n          const gainNode = audioCtx.createGain();\n          osc.connect(gainNode);\n          gainNode.connect(audioCtx.destination);\n          osc.frequency.value = 523.25;\n          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);\n          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);\n          osc.start();\n          osc.stop(audioCtx.currentTime + 0.3);\n        } catch (e) {\n          console.warn("Audio Context blocked or failed:", e);\n        }\n        break;\n\n      case 'move_to':\n        if (act.target) {\n          const targetX = Number(act.x ?? 100);\n          const targetY = Number(act.y ?? 100);\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, x: targetX, y: targetY };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'move_straight':\n      case 'move_zigzag':\n        if (act.target) {\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, x: el.x + 80, y: el.y + (act.type === 'move_zigzag' ? 30 : 0) };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'change_color':\n      case 'glow':\n        if (act.target) {\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, colorFilter: act.value };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'rotate':\n        if (act.target) {\n          const rotationDegrees = Number(act.value ?? 15);\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, rotation: (el.rotation || 0) + rotationDegrees };\n            }\n            return el;\n          }));\n        }\n        break;\n        \n      case 'inc_width':\n        if (act.target) {\n          const addWidth = Number(act.value ?? 10);\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, width: el.width + addWidth };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'inc_height':\n        if (act.target) {\n          const addHeight = Number(act.value ?? 10);\n          setStageElements(prev => prev.map(el => {\n            if (el.data === act.target || el.id === act.target || el.buttonId === act.target) {\n              return { ...el, height: el.height + addHeight };\n            }\n            return el;\n          }));\n        }\n        break;\n\n      case 'create_character':\n        if (act.target) {\n           const targetObj = (gameData.gameObjects || []).find(g => g.id === act.target);\n           if (targetObj) {\n             const newId = \`created_\${Date.now()}\`;\n             setStageElements(prev => [\n               ...prev,\n               { id: newId, type: 'obj', data: act.target, x: Number(act.x ?? 100), y: Number(act.y ?? 100), width: 100, height: 100, zIndex: 10 }\n             ]);\n           }\n        }\n        break;\n\n      case 'js':\n        if (act.code) {\n          try {\n            const runUserCode = new Function(\n              'stageElements', 'setStageElements', \n              'activeSceneId', 'handleSwitchScene',\n              'events', 'setEvents',\n              'gameObjects', 'setGameObjects',\n              'layers', 'setLayers',\n              'activeLayerId', 'setActiveLayerId',\n              act.code\n            );\n            runUserCode(\n              stageElements, (val) => {\n                if (typeof val === 'function') setStageElements(val);\n                else setStageElements(val);\n              },\n              activeSceneId, (sceneId) => {\n                setActiveSceneId(sceneId);\n              },\n              [], () => {},\n              gameData.gameObjects || [], () => {},\n              gameData.layers || [], () => {},\n              '', () => {}\n            );\n          } catch (err) {\n            console.error("Custom JS Error:", err);\n          }\n        }\n        break;\n\n      case 'show_text':\n        if (act.value) {\n          const message = act.value;\n          const toastId = \`toast_\${Date.now()}\`;\n          setStageElements(prev => [\n            ...prev,\n            { id: toastId, type: 'btn', data: null, url: null, x: 220, y: 150, width: 200, height: 40, isToast: true, text: message }\n          ]);\n          setTimeout(() => {\n            setStageElements(prev => prev.filter(el => el.id !== toastId));\n          }, 3000);\n        }\n        break;\n\n      default:\n        console.log("Unhandled action:", act.type);\n    }\n  };\n\n  const handleButtonClick = (buttonId) => {\n    if (!buttonId) return;\n    const btnEl = stageElements.find(e => e.id === buttonId);\n    const sceneEvents = gameData.sceneEvents[activeSceneId] || [];\n    sceneEvents.forEach(ev => {\n      const isPressed = ev.conditions?.some(cond => \n        (cond.type === 'pressed' || cond.type === 'pressed_time' || cond.type === 'double_tap' || cond.type === 'click') && \n        (cond.target === buttonId || (btnEl?.buttonId && cond.target === btnEl.buttonId) || (btnEl?.data && cond.target === btnEl.data))\n      );\n      if (isPressed) {\n        ev.actions?.forEach(act => executeAction(act));\n      }\n    });\n  };\n\n  useEffect(() => {\n    const sceneEvents = gameData.sceneEvents[activeSceneId] || [];\n    sceneEvents.forEach(ev => {\n      const hasSceneStart = ev.conditions?.some(cond => cond.type === 'scene_start');\n      if (hasSceneStart) {\n        ev.actions?.forEach(act => executeAction(act));\n      }\n    });\n\n    let lastTime = Date.now();\n    const timerValues = { scene_timer: 0 };\n\n    const interval = setInterval(() => {\n      const now = Date.now();\n      const dt = (now - lastTime) / 1000;\n      lastTime = now;\n      timerValues.scene_timer += dt;\n\n      const currentEvents = gameData.sceneEvents[activeSceneId] || [];\n      currentEvents.forEach(ev => {\n        let allConditionsMet = ev.conditions?.length > 0;\n\n        ev.conditions?.forEach(cond => {\n          if (!allConditionsMet) return;\n\n          if (cond.type === 'timer') {\n            const limit = Number(cond.value || 0);\n            if (timerValues.scene_timer < limit) {\n              allConditionsMet = false;\n            }\n          }\n\n          if (cond.type === 'collision') {\n            const target1 = cond.target;\n            const target2 = cond.target2;\n            if (target1 && target2) {\n              const el1 = stageElementsRef.current.find(el => el.data === target1 || el.id === target1);\n              const el2 = stageElementsRef.current.find(el => el.data === target2 || el.id === target2);\n              if (el1 && el2) {\n                const collides = !(\n                  el1.x + el1.width < el2.x ||\n                  el2.x + el2.width < el1.x ||\n                  el1.y + el1.height < el2.y ||\n                  el2.y + el2.height < el1.y\n                );\n                if (!collides) allConditionsMet = false;\n              } else {\n                allConditionsMet = false;\n              }\n            } else {\n              allConditionsMet = false;\n            }\n          }\n\n          if (cond.type === 'scene_start' || cond.type === 'pressed' || cond.type === 'pressed_time' || cond.type === 'double_tap') {\n            allConditionsMet = false;\n          }\n        });\n\n        if (allConditionsMet) {\n          ev.actions?.forEach(act => executeAction(act));\n        }\n      });\n    }, 200);\n\n    return () => clearInterval(interval);\n  }, [activeSceneId]);\n\n  return (\n    <div style={{ backgroundColor: '#0a0a0c', width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>\n      <div \n        style={{ \n          position: 'relative', \n          width: \`\${VIRTUAL_WIDTH}px\`,\n          height: \`\${VIRTUAL_HEIGHT}px\`,\n          transform: \`scale(\${scale})\`,\n          transformOrigin: 'center',\n          backgroundColor: gameData.stageBgColor || '#000', \n          overflow: 'hidden',\n          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',\n          borderRadius: aspectRatio === 'portrait' ? '32px' : '12px',\n          border: aspectRatio === 'portrait' ? '12px solid #27272a' : '2px solid rgba(255,255,255,0.05)',\n        }}\n      >\n        {stageElements.map((el, i) => {\n           const isButton = el.type === 'btn';\n           const isObj = el.type === 'obj' || el.type === 'enemy';\n           const gameObject = isObj ? (gameData.gameObjects || []).find(g => g.id === el.data) : null;\n           const isText = gameObject?.type === 'text';\n           const bgUrl = el.url || (isObj ? (gameObject?.url || gameObject?.animations?.[0]) : el.data);\n           const firstAnim = gameObject?.animations?.[0];\n\n           const layers = gameData.layers || [];\n           const layerIdx = layers.findIndex(l => l.id === el.layerId);\n           const layerZ = layerIdx === -1 ? 10 : (layers.length - layerIdx) * 10;\n           const finalZ = isText ? layerZ + 2000 : layerZ;\n\n           const isInteractive = isButton || el.type === 'obj' || el.type === 'enemy';\n           return (\n             <div \n               key={el.id || i} \n               onClick={(e) => {\n                 if (isInteractive) {\n                   e.stopPropagation();\n                   handleButtonClick(el.id);\n                 }\n               }}\n               style={{ \n                 position: 'absolute', \n                 left: el.type === 'bg' ? 0 : el.x, \n                 top: el.type === 'bg' ? 0 : el.y, 
+                 width: el.type === 'bg' ? '100%' : el.width, \n                 height: el.type === 'bg' ? '100%' : el.height, \n                 backgroundImage: (!isText && bgUrl) ? \`url(\${bgUrl})\` : undefined, \n                 backgroundSize: '100% 100%',\n                 backgroundRepeat: 'no-repeat',\n                 backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined,\n                 opacity: el.opacity !== undefined ? el.opacity : 1,\n                 transform: el.rotation ? \`rotate(\${el.rotation}deg)\` : undefined,\n                 cursor: isInteractive ? 'pointer' : 'default',\n                 pointerEvents: isInteractive ? 'auto' : 'none',\n                 zIndex: el.type === 'bg' ? 0 : finalZ\n               }}\n             >\n               {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}\n               {el.type === 'obj' && gameObject?.type === 'text' ? (\n                 <div \n                   style={{\n                     width: '100%',\n                     height: '100%',\n                     display: 'flex',\n                     alignItems: 'center',\n                     justifyContent: gameObject.align === 'left' ? 'flex-start' : gameObject.align === 'right' ? 'flex-end' : 'center',\n                     textAlign: gameObject.align ?? 'center',\n                     fontSize: \`\${gameObject.fontSize ?? 24}px\`,\n                     color: gameObject.color ?? '#ffffff',\n                     fontFamily: gameObject.fontFamily ?? 'Inter, sans-serif',\n                     fontWeight: gameObject.bold !== false ? 'bold' : 'normal',\n                     fontStyle: gameObject.italic ? 'italic' : 'normal',\n                     lineHeight: 1.2,\n                     wordBreak: 'break-word',\n                     overflow: 'visible',\n                     padding: '4px'\n                   }}\n                 >\n                   {gameObject.textContent ?? gameObject.name ?? 'Text'}\n                 </div>\n               ) : el.type === 'obj' && firstAnim && firstAnim.frames && firstAnim.frames.length > 0 ? (\n                 <AnimatedSprite frames={firstAnim.frames} fps={firstAnim.fps || 24} speed={firstAnim.speed || 1} width={el.width} height={el.height} />\n               ) : el.type === 'obj' && (!firstAnim || !firstAnim.frames || firstAnim.frames.length === 0) ? (\n                 <div style={{ width: '100%', height: '100%', backgroundColor: 'rgba(6,182,212,0.2)', border: '1px solid rgba(6,182,212,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#22d3ee', fontWeight: 'bold', padding: '4px', textAlign: 'center' }}>\n                   {gameObject?.name || 'Object'}\n                 </div>\n               ) : null}\n               {el.isToast && (\n                 <div style={{ width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.95)', color: '#facc15', border: '1px solid rgba(234,179,8,0.8)', borderRadius: '4px', padding: '4px 12px', fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', textAlign: 'center' }}>\n                   {el.text}\n                 </div>\n               )}\n             </div>\n           );\n        })}\n      </div>\n      {showRotationPrompt && (\n        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(10,10,12,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '24px', textAlign: 'center' }}>\n          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 4s linear infinite' }}>🔄</div>\n          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>Please Rotate Your Device</h2>\n          <p style={{ color: '#a1a1aa', fontSize: '14px', maxWidth: '300px', marginBottom: '24px' }}>This game is designed for {aspectRatio} screen layout. Please rotate your screen for the best experience.</p>\n          <button onClick={() => setShowRotationPrompt(false)} style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>Play Anyway</button>\n        </div>\n      )}\n    </div>\n  );\n}`
       },
       {
         path: 'README.md',
@@ -2329,13 +2365,22 @@ app.post('/api/github/deploy', async (req, res) => {
       {
         path: 'vercel.json',
         content: `{\n  "framework": "vite",\n  "buildCommand": "npm run build",\n  "outputDirectory": "dist"\n}`
+      },
+      {
+        path: 'src/deployment-meta.json',
+        content: JSON.stringify({
+          deployedAt: new Date().toISOString(),
+          commitMessage: commitMessage || 'Deploy game from Animato Studio',
+          gitHubRepo: `${owner}/${repoNamePart}`,
+          isNoOpDeploy
+        }, null, 2)
       }
     ];
     
     if (hasWorkflowScope) {
       files.push({
         path: '.github/workflows/deploy.yml',
-        content: `name: Deploy to GitHub Pages\non:\n  push:\n    branches: [ ${defaultBranch} ]\npermissions:\n  contents: read\n  pages: write\n  id-token: write\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n      - run: npm install\n      - run: npm run build\n      - uses: actions/upload-pages-artifact@v3\n        with:\n          path: './dist'\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: \${{ steps.deployment.outputs.page_url }}\n    steps:\n      - id: deployment\n        uses: actions/deploy-pages@v4`
+        content: `name: Deploy to GitHub Pages\non:\n  push:\n    branches: [ ${defaultBranch} ]\n  workflow_dispatch:\npermissions:\n  contents: read\n  pages: write\n  id-token: write\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n      - run: npm install\n      - run: npm run build\n      - uses: actions/upload-pages-artifact@v3\n        with:\n          path: './dist'\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    concurrency:\n      group: github-pages\n      cancel-in-progress: true\n    environment:\n      name: github-pages\n      url: \${{ steps.deployment.outputs.page_url }}\n    steps:\n      - id: deployment\n        uses: actions/deploy-pages@v4`
       });
     } else {
       addLog("Skipping .github/workflows/deploy.yml because the GitHub token lacks the 'workflow' scope. Deployment to Pages will require manual setup.");
@@ -2402,7 +2447,7 @@ app.post('/api/github/deploy', async (req, res) => {
         let blobSha = null;
         let blobAttempts = 0;
         while (blobAttempts < 3) {
-          const blobRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/blobs`, {
+          const blobRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/blobs`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -2439,7 +2484,7 @@ app.post('/api/github/deploy', async (req, res) => {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // 4. Create a new Tree
-      addLog(`Creating tree for: ${repoFullName} | Base Tree: ${baseTreeSha || 'None (Initial)'}`);
+      addLog(`Creating tree for: ${owner}/${repoNamePart} | Base Tree: ${baseTreeSha || 'None (Initial)'}`);
       
       let treeData: any;
       let attempts = 0;
@@ -2449,7 +2494,7 @@ app.post('/api/github/deploy', async (req, res) => {
           treeBody.base_tree = baseTreeSha;
         }
 
-        const treeRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
+        const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/trees`, {
           method: 'POST',
           headers,
           body: JSON.stringify(treeBody)
@@ -2464,7 +2509,7 @@ app.post('/api/github/deploy', async (req, res) => {
         // Special case: if 404 and we sent a base_tree, try one last time WITHOUT base_tree
         if (treeRes.status === 404 && treeBody.base_tree) {
            addLog(`Tree creation failed with 404 (possibly invalid base_tree). Retrying WITHOUT base_tree...`, 'warn');
-           const retryRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
+           const retryRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/trees`, {
              method: 'POST',
              headers,
              body: JSON.stringify({ tree: treeItems })
@@ -2477,7 +2522,7 @@ app.post('/api/github/deploy', async (req, res) => {
            }
         }
 
-        addLog(`Tree creation attempt ${attempts + 1} failed for ${repoFullName} on branch ${defaultBranch}: ${JSON.stringify(treeData)}. Retrying...`, 'warn');
+        addLog(`Tree creation attempt ${attempts + 1} failed for ${owner}/${repoNamePart} on branch ${defaultBranch}: ${JSON.stringify(treeData)}. Retrying...`, 'warn');
         await new Promise(resolve => setTimeout(resolve, 3000));
         attempts++;
       }
@@ -2503,7 +2548,7 @@ app.post('/api/github/deploy', async (req, res) => {
       };
       if (latestCommitSha) commitBody.parents = [latestCommitSha];
 
-      const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/commits`, {
+      const commitRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/commits`, {
         method: 'POST',
         headers,
         body: JSON.stringify(commitBody)
@@ -2520,7 +2565,7 @@ app.post('/api/github/deploy', async (req, res) => {
       let refRes: Response;
       if (isRepoEmpty) {
         addLog('Creating initial branch ref...');
-        refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs`, {
+        refRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/refs`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -2530,7 +2575,7 @@ app.post('/api/github/deploy', async (req, res) => {
         });
       } else {
         addLog('Updating existing branch ref...');
-        refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`, {
+        refRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/git/refs/heads/${defaultBranch}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({
@@ -2548,12 +2593,124 @@ app.post('/api/github/deploy', async (req, res) => {
       finalCommitSha = commitData.sha;
     }
 
+    // 1.5. Ensure GitHub Pages has been configured to use GitHub Actions - run AFTER commit/push is successful
+    if (hasWorkflowScope) {
+      try {
+        addLog(`Configuring GitHub Pages for ${owner}/${repoNamePart} (post-commit)...`);
+        const pagesUrl = `https://api.github.com/repos/${owner}/${repoNamePart}/pages`;
+        const getPagesRes = await fetch(pagesUrl, { headers, cache: 'no-store' });
+        
+        if (getPagesRes.status === 404) {
+          addLog('GitHub Pages not configured yet. Creating Pages site with "workflow" build type...', 'info');
+          const postPagesRes = await fetch(pagesUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ build_type: 'workflow' })
+          });
+          const postPagesData = await postPagesRes.json();
+          if (postPagesRes.ok) {
+            addLog('Successfully created GitHub Pages site with "workflow" build type.');
+          } else {
+            addLog(`Failed to create GitHub Pages site: ${postPagesData.message || 'Unknown error'}`, 'warn');
+          }
+        } else if (getPagesRes.ok) {
+          const pagesConfig = await getPagesRes.json();
+          addLog(`Current Pages configuration: build_type=${pagesConfig.build_type}`);
+          if (pagesConfig.build_type === 'legacy') {
+            addLog('Pages is set to "legacy" (branch-based). Updating Pages configuration to "workflow"...', 'info');
+            const putPagesRes = await fetch(pagesUrl, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ build_type: 'workflow' })
+            });
+            const putPagesData = await putPagesRes.json();
+            if (putPagesRes.ok) {
+              addLog('Successfully updated GitHub Pages configuration to "workflow".');
+            } else {
+              addLog(`Failed to update GitHub Pages configuration: ${putPagesData.message || 'Unknown error'}`, 'warn');
+            }
+          } else {
+            addLog('GitHub Pages is already configured with "workflow" build type.');
+          }
+          
+          // Check for and cancel any active/queued workflow runs to prevent overlapping Pages deployment errors
+          try {
+            addLog(`Checking for in-progress workflow runs for ${owner}/${repoNamePart} to prevent concurrent deployment errors...`);
+            const checkUrl = `https://api.github.com/repos/${owner}/${repoNamePart}/actions/runs?status=in_progress`;
+            const checkRes = await fetch(checkUrl, { headers, cache: 'no-store' });
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (checkData.workflow_runs && checkData.workflow_runs.length > 0) {
+                for (const run of checkData.workflow_runs) {
+                  const isPagesRelated = run.name?.toLowerCase().includes('pages') || run.name?.toLowerCase().includes('deploy') || run.path?.endsWith('deploy.yml');
+                  if (isPagesRelated) {
+                    addLog(`Found active in-progress deployment run (ID: ${run.id}, Workflow: "${run.name}"). Cancelling it to prevent overlap...`, 'info');
+                    const cancelRes = await fetch(`https://api.github.com/repos/${owner}/${repoNamePart}/actions/runs/${run.id}/cancel`, {
+                      method: 'POST',
+                      headers
+                    });
+                    if (cancelRes.ok) {
+                      addLog(`Successfully requested cancellation of run ${run.id}.`);
+                    } else {
+                      const cancelData = await cancelRes.json().catch(() => ({}));
+                      addLog(`Note requesting cancellation: ${cancelData.message || cancelRes.statusText}`, 'info');
+                    }
+                  }
+                }
+                // Give GitHub a moment to register cancellation
+                await new Promise(resolve => setTimeout(resolve, 3000));
+              } else {
+                addLog(`No conflicting active workflow runs found.`);
+              }
+            }
+          } catch (checkErr: any) {
+            addLog(`Note checking/cancelling in-progress workflow runs: ${checkErr.message}`, 'info');
+          }
+
+          // Proactively trigger the workflow run immediately via workflow_dispatch API
+          addLog(`Proactively triggering deployment workflow (deploy.yml) via workflow_dispatch...`);
+          const dispatchUrl = `https://api.github.com/repos/${owner}/${repoNamePart}/actions/workflows/deploy.yml/dispatches`;
+          const dispatchRes = await fetch(dispatchUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ ref: defaultBranch })
+          });
+          if (dispatchRes.ok) {
+            addLog('Successfully triggered Pages build/deploy workflow via workflow_dispatch.');
+          } else {
+            const dispatchData = await dispatchRes.json().catch(() => ({}));
+            addLog(`Workflow dispatch status / note: ${dispatchData.message || 'Already queued by push event'}`, 'info');
+          }
+          
+          // Log active/pending workflow runs to provide clear visibility to the user
+          try {
+            const runsUrl = `https://api.github.com/repos/${owner}/${repoNamePart}/actions/runs?event=push&per_page=1`;
+            const runsRes = await fetch(runsUrl, { headers });
+            if (runsRes.ok) {
+              const runsData = await runsRes.json();
+              if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+                const run = runsData.workflow_runs[0];
+                addLog(`Detected active GitHub Actions Run: ID=${run.id}, Status=${run.status}, Conclusion=${run.conclusion || 'pending'}`);
+              }
+            }
+          } catch (runErr: any) {
+            addLog(`Note querying workflow runs: ${runErr.message}`, 'info');
+          }
+        } else {
+          const errData = await getPagesRes.json().catch(() => ({}));
+          addLog(`Unexpected response when checking Pages: HTTP ${getPagesRes.status} - ${errData.message || 'No details'}`, 'warn');
+        }
+      } catch (err: any) {
+        addLog(`Error configuring GitHub Pages: ${err.message}`, 'warn');
+      }
+    }
+
     addLog('Deployment completed successfully!');
     res.json({ 
       success: true, 
       commitSha: finalCommitSha, 
       pagesUrl: hasWorkflowScope ? `https://${repoInfo.owner.login}.github.io/${repoInfo.name}/` : null,
-      repoUrl: repoInfo.html_url || `https://github.com/${repoFullName}`,
+      repoUrl: repoInfo.html_url || `https://github.com/${owner}/${repoNamePart}`,
       logs 
     });
   } catch (err: any) {

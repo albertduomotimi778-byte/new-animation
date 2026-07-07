@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Github, X, Check, Loader2, ExternalLink, Globe, Lock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { processGameDataAssets } from '../utils/exportUtils';
 
 interface GithubRepoModalProps {
   isOpen: boolean;
@@ -30,7 +31,9 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      checkRepoExistence();
+      const initialRepoName = projectName.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
+      setRepoName(initialRepoName);
+      checkRepoExistence(initialRepoName);
     } else {
       setStatus('checking');
       setRepoExists(false);
@@ -39,13 +42,14 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
     }
   }, [isOpen, projectName]);
 
-  const checkRepoExistence = async () => {
+  const checkRepoExistence = async (nameToCheck?: string) => {
+    const activeName = nameToCheck || repoName;
     setStatus('checking');
     try {
       const res = await fetch('/api/github/check-repo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, repoName })
+        body: JSON.stringify({ email: userEmail, repoName: activeName })
       });
       const data = await res.json();
       if (data.exists) {
@@ -93,13 +97,17 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
 
       // 2. Deploy Files
       setStatus('deploying');
+      
+      // Convert any local/temporary browser blob URLs to base64 before deploying
+      const processedGameData = await processGameDataAssets(gameData);
+
       const deployRes = await fetch('/api/github/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: userEmail,
           repoFullName: targetRepoFullName,
-          gameData,
+          gameData: processedGameData,
           commitMessage: repoExists ? `Update game via Animato Studio` : `Initial deployment of ${projectName}`
         })
       });
@@ -149,8 +157,12 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                 <Github size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Deploy to GitHub</h3>
-                <p className="text-xs text-gray-500">Host your game on GitHub Pages or Vercel.</p>
+                <h3 className="text-xl font-bold text-white">
+                  {repoExists ? 'Update GitHub Page' : 'Deploy to GitHub'}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {repoExists ? 'Push updates to your existing hosted game.' : 'Host your game on GitHub Pages or Vercel.'}
+                </p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-400 transition-colors">
@@ -265,7 +277,7 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                 </div>
                 <div>
                   <h4 className="text-xl font-bold text-white mb-2">
-                    {status === 'creating' ? 'Creating Repository...' : 'Pushing Source Files...'}
+                    {status === 'creating' ? 'Creating Repository...' : (repoExists ? 'Updating Source Files...' : 'Pushing Source Files...')}
                   </h4>
                   <p className="text-gray-500 text-sm max-w-xs">
                     Please wait while we set up your professional GitHub environment.
@@ -281,7 +293,9 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                 </div>
                 <div className="w-full space-y-4">
                   <div>
-                    <h4 className="text-xl font-bold text-white mb-2">Successfully Pushed!</h4>
+                    <h4 className="text-xl font-bold text-white mb-2">
+                      {repoExists ? 'Successfully Updated!' : 'Successfully Deployed!'}
+                    </h4>
                     <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4 bg-white/5 p-3 rounded-xl border border-white/10 text-left">
                       <strong>Vercel users:</strong> Your app will auto-deploy shortly.<br/>
                       {deployedUrl ? (
