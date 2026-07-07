@@ -4,7 +4,8 @@ import {
   Layers, Box, MousePointerClick, Image as ImageIcon, FileCode2,
   MonitorPlay, Smartphone, PaintBucket, PenTool,
   ChevronDown, ChevronUp, Sliders, Trash2, Github,
-  Save, RefreshCw, Key, Shield, HelpCircle, ExternalLink, Flame, Info
+  Save, RefreshCw, Key, Shield, HelpCircle, ExternalLink, Flame, Info,
+  AlertTriangle, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AdvancedColorPicker } from './AdvancedColorPicker';
@@ -174,6 +175,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
   const [showGithubRepoModal, setShowGithubRepoModal] = useState(false);
   const [isGithubConnected, setIsGithubConnected] = useState(false);
   const [githubUsername, setGithubUsername] = useState('');
+  const [githubMissingScopes, setGithubMissingScopes] = useState<string[]>([]);
+  const [githubIsFineGrained, setGithubIsFineGrained] = useState<boolean>(false);
   const [appVersion, setAppVersion] = useState(() => localStorage.getItem('app_version') || 'v1.0.4');
 
   useEffect(() => {
@@ -661,6 +664,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
           if (data.connected) {
             setIsGithubConnected(true);
             setGithubUsername(data.username);
+            setGithubMissingScopes(data.missingScopes || []);
+            setGithubIsFineGrained(data.isFineGrained || false);
             
             // Save or refresh cache
             localStorage.setItem(`github_conn_${userEmail}`, JSON.stringify({
@@ -753,6 +758,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
           if (data.connected) {
             setIsGithubConnected(true);
             setGithubUsername(data.username);
+            setGithubMissingScopes(data.missingScopes || []);
+            setGithubIsFineGrained(data.isFineGrained || false);
             
             // Save cache
             localStorage.setItem(`github_conn_${userEmail}`, JSON.stringify({
@@ -807,7 +814,7 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: redirectUri,
-        scope: 'repo user',
+        scope: 'repo workflow admin:repo_hook delete_repo read:user user:email',
         state: randomState,
         prompt: 'consent'
       });
@@ -848,8 +855,29 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
         }
       });
       if (!response.ok) {
-        throw new Error('Invalid token. Make sure the token is active and has "repo" and "workflow" scopes.');
+        throw new Error('Invalid token. Make sure the token is active and correct.');
       }
+      
+      const scopesHeader = response.headers.get('x-oauth-scopes') || '';
+      const isFineGrained = patToken.trim().startsWith('github_pat_');
+      
+      if (!isFineGrained) {
+        const scopes = scopesHeader.split(',').map(s => s.trim());
+        const missing: string[] = [];
+        if (!scopes.includes('repo')) missing.push('repo');
+        if (!scopes.includes('workflow')) missing.push('workflow');
+        if (!scopes.includes('admin:repo_hook')) missing.push('admin:repo_hook');
+        if (!scopes.includes('delete_repo')) missing.push('delete_repo');
+        
+        const hasUserScope = scopes.includes('user');
+        if (!hasUserScope && !scopes.includes('read:user')) missing.push('read:user');
+        if (!hasUserScope && !scopes.includes('user:email')) missing.push('user:email');
+        
+        if (missing.length > 0) {
+          throw new Error(`Token is missing the following required classic scopes: ${missing.join(', ')}. Please update your Classic PAT scopes.`);
+        }
+      }
+      
       const data = await response.json();
       const login = data.login || 'GitHub User';
       const avatarUrl = data.avatar_url || '';
@@ -874,6 +902,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
       
       setIsGithubConnected(true);
       setGithubUsername(login);
+      setGithubMissingScopes([]);
+      setGithubIsFineGrained(isFineGrained);
       setShowGithubConnectModal(false);
       alert(`Successfully connected to GitHub as @${login}!`);
     } catch (err: any) {
@@ -917,6 +947,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
       // 3. Reset React state
       setIsGithubConnected(false);
       setGithubUsername('');
+      setGithubMissingScopes([]);
+      setGithubIsFineGrained(false);
       
       alert('Successfully disconnected from your GitHub account.');
     } catch (err: any) {
@@ -939,6 +971,8 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
             const data = await response.json();
             if (data.connected) {
               setGithubUsername(data.username);
+              setGithubMissingScopes(data.missingScopes || []);
+              setGithubIsFineGrained(data.isFineGrained || false);
               localStorage.setItem(`github_conn_${userEmail}`, JSON.stringify({
                 connected: true,
                 username: data.username,
@@ -2725,28 +2759,61 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
               </label>
               
               {isGithubConnected ? (
-                <div className="bg-zinc-950 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-3 animate-in fade-in duration-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                      <Github size={18} />
+                <div className="flex flex-col gap-2.5">
+                  <div className="bg-zinc-950 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <Github size={18} />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-xs font-bold text-white block leading-tight">Connected</span>
+                        <span className="text-[10px] text-zinc-500 leading-tight">as @{githubUsername}</span>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <span className="text-xs font-bold text-white block leading-tight">Connected</span>
-                      <span className="text-[10px] text-zinc-500 leading-tight">as @{githubUsername}</span>
-                    </div>
+                    
+                    <button
+                      onClick={handleDisconnectGithub}
+                      disabled={isDisconnectingGithub}
+                      className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 text-[10px] font-bold rounded-xl transition-all flex items-center gap-1.5 disabled:opacity-40"
+                    >
+                      {isDisconnectingGithub ? (
+                        <RefreshCw size={12} className="animate-spin" />
+                      ) : (
+                        <>Disconnect</>
+                      )}
+                    </button>
                   </div>
-                  
-                  <button
-                    onClick={handleDisconnectGithub}
-                    disabled={isDisconnectingGithub}
-                    className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30 text-[10px] font-bold rounded-xl transition-all flex items-center gap-1.5 disabled:opacity-40"
-                  >
-                    {isDisconnectingGithub ? (
-                      <RefreshCw size={12} className="animate-spin" />
-                    ) : (
-                      <>Disconnect</>
-                    )}
-                  </button>
+
+                  {githubIsFineGrained && (
+                    <div className="px-3.5 py-2.5 bg-blue-500/5 border border-blue-500/10 rounded-xl text-[10px] text-blue-400 flex items-start gap-2 leading-relaxed text-left">
+                      <Info size={14} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        Using a <strong>Fine-grained PAT</strong>. Please ensure you have granted <strong>Read & Write</strong> permissions for Contents, Workflows, Pages, Actions, and Administration in your token's repository settings.
+                      </span>
+                    </div>
+                  )}
+
+                  {!githubIsFineGrained && githubMissingScopes.length > 0 && (
+                    <div className="p-3.5 bg-red-500/5 border border-red-500/15 rounded-xl text-[11px] space-y-2 text-left">
+                      <div className="flex items-center gap-1.5 text-red-400 font-bold text-[10px] uppercase tracking-wider">
+                        <AlertTriangle size={13} className="text-red-400" />
+                        Missing Required Classic Scopes
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        Your connection is missing critical scopes required for deploying games to Pages and compiling APKs:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {githubMissingScopes.map(scope => (
+                          <span key={scope} className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-300 rounded text-[9px] font-mono font-semibold">
+                            {scope}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-zinc-500 leading-relaxed">
+                        Please disconnect and connect again with a token that includes these scopes to avoid silent deployment or compilation failures.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-zinc-950/60 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-3 animate-in fade-in duration-200">
@@ -3249,16 +3316,49 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
                     />
                   </div>
 
-                  <div className="bg-zinc-950/60 border border-white/5 p-3.5 rounded-xl space-y-2 text-[11px] text-zinc-400">
-                    <span className="font-bold text-white flex items-center gap-1">
-                      <HelpCircle size={13} className="text-cyan-400" />
-                      How to generate a Classic Token:
-                    </span>
-                    <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed">
-                      <li>Go to <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Animato%20Studio" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-0.5">GitHub Developer Settings <ExternalLink size={10} /></a></li>
-                      <li>Check the <strong className="text-zinc-200">repo</strong> and <strong className="text-zinc-200">workflow</strong> scopes.</li>
-                      <li>Click <strong className="text-zinc-200">Generate token</strong>, copy and paste it into the field above.</li>
-                    </ol>
+                  <div className="bg-zinc-950/60 border border-white/5 p-4 rounded-xl space-y-3.5 text-[11px] text-zinc-400">
+                    <div className="space-y-1.5">
+                      <span className="font-bold text-white flex items-center gap-1 text-[12px]">
+                        <HelpCircle size={14} className="text-cyan-400" />
+                        Required Permissions & Scopes:
+                      </span>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">
+                        To enable seamless repository creation, GitHub Pages publishing, and APK compilation, your Personal Access Token must have specific permissions.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-white/5 pt-3.5 space-y-2">
+                      <span className="font-semibold text-zinc-200 block text-[11px]">
+                        Option A: Classic PAT (Classic Token)
+                      </span>
+                      <p className="text-[10px] leading-relaxed">
+                        Go to <a href="https://github.com/settings/tokens/new?scopes=repo,workflow,admin:repo_hook,delete_repo,read:user,user:email&description=Animato%20Studio" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-0.5 font-medium">GitHub Classic Settings <ExternalLink size={10} /></a> and ensure these scopes are checked:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 pl-1 text-[10px] leading-relaxed text-zinc-300">
+                        <li><strong className="text-zinc-100">repo</strong> (Full repository control)</li>
+                        <li><strong className="text-zinc-100">workflow</strong> (Update workflow files)</li>
+                        <li><strong className="text-zinc-100">admin:repo_hook</strong> (Manage repository webhooks)</li>
+                        <li><strong className="text-zinc-100">delete_repo</strong> (Delete connected repos if needed)</li>
+                        <li><strong className="text-zinc-100">read:user</strong> & <strong className="text-zinc-100">user:email</strong> (Retrieve profile info)</li>
+                      </ul>
+                    </div>
+
+                    <div className="border-t border-white/5 pt-3.5 space-y-2">
+                      <span className="font-semibold text-zinc-200 block text-[11px]">
+                        Option B: Fine-grained PAT (Beta Token)
+                      </span>
+                      <p className="text-[10px] leading-relaxed">
+                        Go to <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline inline-flex items-center gap-0.5 font-medium">GitHub Fine-grained Settings <ExternalLink size={10} /></a>. Select your target repositories, and set these <strong className="text-zinc-200">Repository Permissions</strong> to <strong className="text-emerald-400">Read & Write</strong>:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 pl-1 text-[10px] leading-relaxed text-zinc-300">
+                        <li><strong className="text-zinc-100">Contents</strong>: Read and Write</li>
+                        <li><strong className="text-zinc-100">Workflows</strong>: Read and Write</li>
+                        <li><strong className="text-zinc-100">Pages</strong>: Read and Write</li>
+                        <li><strong className="text-zinc-100">Actions</strong>: Read and Write</li>
+                        <li><strong className="text-zinc-100">Administration</strong>: Read and Write</li>
+                        <li><strong className="text-zinc-100">Metadata</strong>: Read-only (required automatically)</li>
+                      </ul>
+                    </div>
                   </div>
 
                   {patError && (

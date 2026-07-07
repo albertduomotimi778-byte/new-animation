@@ -26,6 +26,7 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [repoFullName, setRepoFullName] = useState<string | null>(null);
   const [repoExists, setRepoExists] = useState(false);
+  const [permissions, setPermissions] = useState<{ valid: boolean, errors: string[] } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,6 +35,7 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
       setStatus('checking');
       setRepoExists(false);
       setRepoFullName(null);
+      setPermissions(null);
     }
   }, [isOpen, projectName]);
 
@@ -49,8 +51,10 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
       if (data.exists) {
         setRepoExists(true);
         setRepoFullName(data.repoFullName);
+        setPermissions(data.permissions || null);
       } else {
         setRepoExists(false);
+        setPermissions(null);
       }
       setStatus('idle');
     } catch (err) {
@@ -217,6 +221,26 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                     <p className="text-sm text-gray-400">
                       The repository <strong>{repoFullName}</strong> already exists. 
                       Click below to push your latest changes.
+                    </p>
+                  </div>
+                )}
+
+                {permissions && !permissions.valid && (
+                  <div className="p-4 bg-red-500/5 border border-red-500/15 rounded-2xl text-[11px] space-y-2 text-left mb-4">
+                    <div className="flex items-center gap-1.5 text-red-400 font-bold text-[10px] uppercase tracking-wider">
+                      <AlertCircle size={13} className="text-red-400" />
+                      Missing Repository Permissions
+                    </div>
+                    <p className="text-[10px] text-zinc-400 leading-relaxed">
+                      Your connected GitHub token is missing crucial permissions for this repository:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 pl-1 text-[10px] text-zinc-300">
+                      {permissions.errors.map((err, idx) => (
+                        <li key={idx} className="leading-relaxed">{err}</li>
+                      ))}
+                    </ul>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed pt-1 border-t border-white/5">
+                      To resolve this, please ensure your Classic PAT has the <strong className="text-zinc-400">repo</strong> scope, or your Fine-grained PAT has <strong className="text-zinc-400 font-semibold">Read & Write</strong> permissions enabled for Contents, Workflows, Pages, Actions, and Administration.
                     </p>
                   </div>
                 )}

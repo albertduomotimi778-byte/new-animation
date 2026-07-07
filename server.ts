@@ -1822,7 +1822,7 @@ app.get("/api/auth/github/url", (req, res) => {
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: redirectUri,
-    scope: 'repo user workflow',
+    scope: 'repo workflow admin:repo_hook delete_repo read:user user:email',
     state: randomState,
     prompt: 'consent',
   });
@@ -1847,7 +1847,6 @@ app.get('/api/auth/github/status', async (req, res) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
       
-      // Validate that the token has the required 'workflow' scope
       const fetchFn = (globalThis.fetch || fetch);
       const userRes = await fetchFn('https://api.github.com/user', {
         headers: {
@@ -1859,12 +1858,30 @@ app.get('/api/auth/github/status', async (req, res) => {
       
       if (userRes.ok) {
         const scopesHeader = userRes.headers.get('x-oauth-scopes') || '';
-        if (!scopesHeader.includes('workflow')) {
-          console.warn(`[api/auth/github/status] Token for ${email} lacks 'workflow' scope. Disconnecting user to force re-auth.`);
-          await originalDeleteDoc(doc(db, 'github_connections', email));
-          return res.json({ status: true, connected: false });
+        const isFineGrained = String(data.access_token || '').startsWith('github_pat_');
+        
+        let missingScopes: string[] = [];
+        if (!isFineGrained) {
+          const scopes = scopesHeader.split(',').map(s => s.trim());
+          if (!scopes.includes('repo')) missingScopes.push('repo');
+          if (!scopes.includes('workflow')) missingScopes.push('workflow');
+          if (!scopes.includes('admin:repo_hook')) missingScopes.push('admin:repo_hook');
+          if (!scopes.includes('delete_repo')) missingScopes.push('delete_repo');
+          
+          const hasUserScope = scopes.includes('user');
+          if (!hasUserScope && !scopes.includes('read:user')) missingScopes.push('read:user');
+          if (!hasUserScope && !scopes.includes('user:email')) missingScopes.push('user:email');
         }
-        return res.json({ status: true, connected: true, username: data.username, avatar_url: data.avatar_url });
+
+        return res.json({ 
+          status: true, 
+          connected: true, 
+          username: data.username, 
+          avatar_url: data.avatar_url,
+          isFineGrained,
+          hasAllRequiredPermissions: missingScopes.length === 0,
+          missingScopes
+        });
       } else {
         // Token might be invalid/expired
         console.warn(`[api/auth/github/status] Token for ${email} is invalid (${userRes.status}). Disconnecting.`);
@@ -1879,6 +1896,66 @@ app.get('/api/auth/github/status', async (req, res) => {
   }
 });
 
+async function validateRepoPermissions(accessToken: string, owner: string, repo: string) {
+  const fetchFn = (globalThis.fetch || fetch);
+  const headers = {
+    'Authorization': `Bearer ${accessToken}`,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'Animato-Studio'
+  };
+
+  const errors: string[] = [];
+
+  // 1. Check Repository basic permissions & Administration
+  try {
+    const repoRes = await fetchFn(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+    if (!repoRes.ok) {
+      if (repoRes.status === 404) {
+        errors.push("Repository not found or token lacks 'Metadata' (Read-only) / 'Contents' access.");
+      } else {
+        errors.push(`Failed to access repository details: HTTP ${repoRes.status}`);
+      }
+    } else {
+      const repoData = await repoRes.json();
+      const permissions = repoData.permissions || {};
+      if (!permissions.push) {
+        errors.push("Missing write permissions ('Contents: Read and write' is required to push files).");
+      }
+      if (!permissions.admin) {
+        errors.push("Missing administration permissions ('Administration: Read and write' is required to configure GitHub Pages).");
+      }
+    }
+  } catch (err: any) {
+    errors.push(`Error checking repository: ${err.message}`);
+  }
+
+  // 2. Check Actions & Workflows permissions
+  try {
+    const actionsRes = await fetchFn(`https://api.github.com/repos/${owner}/${repo}/actions/workflows`, { headers });
+    if (!actionsRes.ok) {
+      errors.push("Missing 'Actions' or 'Workflows' permissions (unable to view workflows). Required for Pages and APK build triggers.");
+    }
+  } catch (err: any) {
+    errors.push(`Error checking Actions/Workflows: ${err.message}`);
+  }
+
+  // 3. Check Pages permissions
+  try {
+    const pagesRes = await fetchFn(`https://api.github.com/repos/${owner}/${repo}/pages`, { headers });
+    if (pagesRes.status === 401 || pagesRes.status === 403) {
+      errors.push("Missing 'Pages' permissions (unable to manage GitHub Pages configuration).");
+    }
+  } catch (err: any) {
+    errors.push(`Error checking Pages permissions: ${err.message}`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
 app.post('/api/github/check-repo', async (req, res) => {
   const { email, repoName } = req.body;
   if (!email || !repoName) return res.status(400).json({ error: 'Email and repoName are required' });
@@ -1888,8 +1965,9 @@ app.post('/api/github/check-repo', async (req, res) => {
     if (!docSnap.exists()) return res.status(401).json({ error: 'GitHub not connected' });
     
     const { access_token } = docSnap.data();
+    const fetchFn = (globalThis.fetch || fetch);
     
-    const userRes = await fetch('https://api.github.com/user', {
+    const userRes = await fetchFn('https://api.github.com/user', {
       headers: { 
         'Authorization': `Bearer ${access_token}`,
         'Accept': 'application/vnd.github+json',
@@ -1898,7 +1976,7 @@ app.post('/api/github/check-repo', async (req, res) => {
     });
     const userData = await userRes.json();
     if (userRes.ok && userData.login) {
-      const checkRepoRes = await fetch(`https://api.github.com/repos/${userData.login}/${repoName}`, {
+      const checkRepoRes = await fetchFn(`https://api.github.com/repos/${userData.login}/${repoName}`, {
         headers: { 
           'Authorization': `Bearer ${access_token}`,
           'Accept': 'application/vnd.github+json',
@@ -1906,7 +1984,13 @@ app.post('/api/github/check-repo', async (req, res) => {
         }
       });
       if (checkRepoRes.ok) {
-        return res.json({ exists: true, repoFullName: `${userData.login}/${repoName}` });
+        const repoFullName = `${userData.login}/${repoName}`;
+        const permissions = await validateRepoPermissions(access_token, userData.login, repoName);
+        return res.json({ 
+          exists: true, 
+          repoFullName,
+          permissions
+        });
       }
     }
     return res.json({ exists: false });
@@ -2079,13 +2163,62 @@ app.post('/api/github/deploy', async (req, res) => {
     addLog(`Resolved default branch for ${repoFullName}: ${defaultBranch}`);
     
     // Check scopes for 'workflow'
+    const isFineGrained = String(access_token || '').startsWith('github_pat_');
     let hasWorkflowScope = false;
     const scopesHeader = repoRes.headers?.get('x-oauth-scopes') || '';
-    addLog(`Token scopes: ${scopesHeader || 'none'}`);
-    if (scopesHeader.includes('workflow')) {
+    addLog(`Token scopes: ${scopesHeader || 'none'}, isFineGrained: ${isFineGrained}`);
+    if (isFineGrained || scopesHeader.includes('workflow')) {
       hasWorkflowScope = true;
     } else {
       addLog(`Token lacks 'workflow' scope. We will skip creating .github/workflows/deploy.yml to prevent 404 errors.`, 'warn');
+    }
+
+    // 1.5. Ensure GitHub Pages has been configured to use GitHub Actions
+    if (hasWorkflowScope) {
+      try {
+        addLog(`Checking GitHub Pages configuration for ${repoFullName}...`);
+        const pagesUrl = `https://api.github.com/repos/${repoFullName}/pages`;
+        const getPagesRes = await fetch(pagesUrl, { headers });
+        
+        if (getPagesRes.status === 404) {
+          addLog('GitHub Pages not configured yet. Creating Pages site with "workflow" build type...', 'info');
+          const postPagesRes = await fetch(pagesUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ build_type: 'workflow' })
+          });
+          const postPagesData = await postPagesRes.json();
+          if (postPagesRes.ok) {
+            addLog('Successfully created GitHub Pages site with "workflow" build type.');
+          } else {
+            addLog(`Failed to create GitHub Pages site: ${postPagesData.message || 'Unknown error'}`, 'warn');
+          }
+        } else if (getPagesRes.ok) {
+          const pagesConfig = await getPagesRes.json();
+          addLog(`Current Pages configuration: build_type=${pagesConfig.build_type}`);
+          if (pagesConfig.build_type === 'legacy') {
+            addLog('Pages is set to "legacy" (branch-based). Updating Pages configuration to "workflow"...', 'info');
+            const putPagesRes = await fetch(pagesUrl, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ build_type: 'workflow' })
+            });
+            const putPagesData = await putPagesRes.json();
+            if (putPagesRes.ok) {
+              addLog('Successfully updated GitHub Pages configuration to "workflow".');
+            } else {
+              addLog(`Failed to update GitHub Pages configuration: ${putPagesData.message || 'Unknown error'}`, 'warn');
+            }
+          } else {
+            addLog('GitHub Pages is already configured with "workflow" build type.');
+          }
+        } else {
+          const errData = await getPagesRes.json().catch(() => ({}));
+          addLog(`Unexpected response when checking Pages: HTTP ${getPagesRes.status} - ${errData.message || 'No details'}`, 'warn');
+        }
+      } catch (err: any) {
+        addLog(`Error configuring GitHub Pages: ${err.message}`, 'warn');
+      }
     }
     
     let latestCommitSha: string | null = null;
