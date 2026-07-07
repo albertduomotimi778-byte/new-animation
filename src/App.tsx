@@ -224,11 +224,18 @@ export default function GameRunner() {
               'activeLayerId', 'setActiveLayerId',
               act.code
             );
+            const customSetStageElements = (newVal) => {
+              if (typeof newVal === 'function') {
+                setStageElements(prev => {
+                  const updated = newVal(prev);
+                  return Array.isArray(updated) ? [...updated] : updated;
+                });
+              } else {
+                setStageElements(Array.isArray(newVal) ? [...newVal] : newVal);
+              }
+            };
             runUserCode(
-              stageElements, (val) => {
-                if (typeof val === 'function') setStageElements(val);
-                else setStageElements(val);
-              },
+              stageElementsRef.current, customSetStageElements,
               activeSceneId, (sceneId) => {
                 setActiveSceneId(sceneId);
               },
@@ -264,7 +271,7 @@ export default function GameRunner() {
 
   const handleButtonClick = (buttonId) => {
     if (!buttonId) return;
-    const btnEl = stageElements.find(e => e.id === buttonId);
+    const btnEl = stageElementsRef.current.find(e => e.id === buttonId);
     const sceneEvents = gameData.sceneEvents[activeSceneId] || [];
     sceneEvents.forEach(ev => {
       const isPressed = ev.conditions?.some(cond => 
