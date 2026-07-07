@@ -2187,7 +2187,7 @@ app.post('/api/github/deploy', async (req, res) => {
       },
       {
         path: 'src/App.tsx',
-        content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  const handleButtonClick = (elId) => {\n    const events = gameData.sceneEvents[activeSceneId] || [];\n    const ev = events.find(e => e.elementId === elId && e.trigger === 'onClick');\n    if (ev) {\n      if (ev.action === 'gotoScene' && ev.targetId) {\n        setActiveSceneId(ev.targetId);\n      } else if (ev.action === 'playSound' && ev.targetId) {\n        const audio = new Audio(ev.targetId);\n        audio.play().catch(console.error);\n      }\n    }\n  };\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor || '#000', width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor || '#000', overflow: 'hidden' }}>\n        {stageElements.map((el, i) => {\n           const isButton = el.type === 'btn' || el.type === 'obj';\n           return (\n             <div \n               key={el.id || i} \n               onClick={(e) => {\n                 if (isButton) {\n                   e.stopPropagation();\n                   handleButtonClick(el.id);\n                 }\n               }}\n               style={{ \n                 position: 'absolute', \n                 left: el.type === 'bg' ? 0 : el.x, \n                 top: el.type === 'bg' ? 0 : el.y, \n                 width: el.type === 'bg' ? '100%' : el.width, \n                 height: el.type === 'bg' ? '100%' : el.height, \n                 backgroundImage: (el.type !== 'obj' && (el.url || el.data)) ? \`url(\${el.url || el.data})\` : undefined, \n                 backgroundSize: '100% 100%',\n                 backgroundRepeat: 'no-repeat',\n                 opacity: el.opacity !== undefined ? el.opacity : 1,\n                 transform: el.rotation ? \`rotate(\${el.rotation}deg)\` : undefined,\n                 cursor: isButton ? 'pointer' : 'default',\n                 zIndex: el.type === 'bg' ? 0 : (el.layerId ? 10 : 20)\n               }}\n             >\n               {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}\n             </div>\n           );\n        })}\n      </div>\n    </div>\n  );\n}`
+        content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  const handleButtonClick = (elId) => {\n    const events = gameData.sceneEvents[activeSceneId] || [];\n    const ev = events.find(e => e.elementId === elId && e.trigger === 'onClick');\n    if (ev) {\n      if (ev.action === 'gotoScene' && ev.targetId) {\n        setActiveSceneId(ev.targetId);\n      } else if (ev.action === 'playSound' && ev.targetId) {\n        const audio = new Audio(ev.targetId);\n        audio.play().catch(console.error);\n      }\n    }\n  };\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor || '#000', width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor || '#000', overflow: 'hidden' }}>\n        {stageElements.map((el, i) => {\n           const isButton = el.type === 'btn' || el.type === 'obj';\n           const isObj = el.type === 'obj' || el.type === 'enemy';\n           const gameObject = isObj ? (gameData.gameObjects || []).find(g => g.id === el.data) : null;\n           const isText = gameObject?.type === 'text';\n           const bgUrl = el.url || (isObj ? (gameObject?.url || gameObject?.animations?.[0]) : el.data);\n           return (\n             <div \n               key={el.id || i} \n               onClick={(e) => {\n                 if (isButton) {\n                   e.stopPropagation();\n                   handleButtonClick(el.id);\n                 }\n               }}\n               style={{ \n                 position: 'absolute', \n                 left: el.type === 'bg' ? 0 : el.x, \n                 top: el.type === 'bg' ? 0 : el.y, \n                 width: el.type === 'bg' ? '100%' : el.width, \n                 height: el.type === 'bg' ? '100%' : el.height, \n                 backgroundImage: (!isText && bgUrl) ? \`url(\${bgUrl})\` : undefined, \n                 backgroundSize: '100% 100%',\n                 backgroundRepeat: 'no-repeat',\n                 backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined,\n                 opacity: el.opacity !== undefined ? el.opacity : 1,\n                 transform: el.rotation ? \`rotate(\${el.rotation}deg)\` : undefined,\n                 cursor: isButton ? 'pointer' : 'default',\n                 pointerEvents: isButton ? 'auto' : 'none',\n                 zIndex: el.type === 'bg' ? 0 : (isText ? 2000 : (el.layerId ? 10 : 20))\n               }}\n             >\n               {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}\n               {isText && (\n                 <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', fontWeight:'bold', color: gameObject.color || '#fff', fontSize: gameObject.fontSize ? \`\${gameObject.fontSize}px\` : '24px'}}>\n                   {gameObject.name}\n                 </div>\n               )}\n             </div>\n           );\n        })}\n      </div>\n    </div>\n  );\n}`
       },
       {
         path: 'README.md',
@@ -2208,158 +2208,217 @@ app.post('/api/github/deploy', async (req, res) => {
       addLog("Skipping .github/workflows/deploy.yml because the GitHub token lacks the 'workflow' scope. Deployment to Pages will require manual setup.");
     }
     
-    const treeItems = [];
-    for (const file of files) {
-      addLog(`Creating blob for ${file.path}...`);
-      let blobSha = null;
-      let blobAttempts = 0;
-      while (blobAttempts < 3) {
-        const blobRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/blobs`, {
+    let treeItems = [];
+    let finalCommitSha = latestCommitSha;
+    
+    if (latestCommitSha) {
+      addLog(`Using GraphQL createCommitOnBranch to trigger webhooks. Head OID: ${latestCommitSha}`);
+      
+      const graphqlQuery = {
+        query: `
+          mutation ($input: CreateCommitOnBranchInput!) {
+            createCommitOnBranch(input: $input) {
+              commit {
+                oid
+                url
+              }
+            }
+          }
+        `,
+        variables: {
+          input: {
+            branch: {
+              repositoryNameWithOwner: repoFullName,
+              branchName: defaultBranch
+            },
+            message: {
+              headline: commitMessage || 'Deploy game from Animato Studio'
+            },
+            expectedHeadOid: latestCommitSha,
+            fileChanges: {
+              additions: files.map(f => ({
+                path: f.path,
+                contents: Buffer.from(f.content).toString('base64')
+              })),
+              deletions: []
+            }
+          }
+        }
+      };
+
+      const gqlRes = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(graphqlQuery)
+      });
+      
+      const gqlData = await gqlRes.json();
+      if (gqlData.errors) {
+        addLog(`GraphQL Error: ${JSON.stringify(gqlData.errors)}`, 'error');
+        throw new Error(gqlData.errors[0]?.message || 'GraphQL Error during createCommitOnBranch');
+      }
+      
+      finalCommitSha = gqlData.data?.createCommitOnBranch?.commit?.oid;
+      addLog(`Commit successful via GraphQL: ${finalCommitSha}`);
+      
+    } else {
+      addLog(`Repo appears empty. Using REST API fallback.`);
+      
+      for (const file of files) {
+        addLog(`Creating blob for ${file.path}...`);
+        let blobSha = null;
+        let blobAttempts = 0;
+        while (blobAttempts < 3) {
+          const blobRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/blobs`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              content: Buffer.from(file.content).toString('base64'),
+              encoding: 'base64'
+            })
+          });
+          const blobData = await blobRes.json();
+          if (blobRes.ok) {
+            blobSha = blobData.sha;
+            addLog(`Successfully created blob for ${file.path}: ${blobSha}`);
+            break;
+          }
+          addLog(`Blob creation failed for ${file.path}, attempt ${blobAttempts + 1}: ${blobData.message} (Status: ${blobRes.status})`, 'warn');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          blobAttempts++;
+        }
+
+        if (!blobSha) {
+          addLog(`Failed to create blob for ${file.path}`, 'error');
+          throw new Error(`Failed to create blob for ${file.path}`);
+        }
+
+        treeItems.push({
+          path: file.path,
+          mode: '100644',
+          type: 'blob',
+          sha: blobSha
+        });
+      }
+
+      // Give GitHub a moment to index the blobs
+      addLog('Waiting for GitHub indexing (3s)...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // 4. Create a new Tree
+      addLog(`Creating tree for: ${repoFullName} | Base Tree: ${baseTreeSha || 'None (Initial)'}`);
+      
+      let treeData: any;
+      let attempts = 0;
+      while (attempts < 5) {
+        const treeBody: any = { tree: treeItems };
+        if (baseTreeSha && !isRepoEmpty) {
+          treeBody.base_tree = baseTreeSha;
+        }
+
+        const treeRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(treeBody)
+        });
+        treeData = await treeRes.json();
+        
+        if (treeRes.ok) {
+          addLog(`Tree created successfully: ${treeData.sha}`);
+          break;
+        }
+
+        // Special case: if 404 and we sent a base_tree, try one last time WITHOUT base_tree
+        if (treeRes.status === 404 && treeBody.base_tree) {
+           addLog(`Tree creation failed with 404 (possibly invalid base_tree). Retrying WITHOUT base_tree...`, 'warn');
+           const retryRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
+             method: 'POST',
+             headers,
+             body: JSON.stringify({ tree: treeItems })
+           });
+           const retryData = await retryRes.json();
+           if (retryRes.ok) {
+             treeData = retryData;
+             addLog(`Tree created successfully (after 404 fallback): ${treeData.sha}`);
+             break;
+           }
+        }
+
+        addLog(`Tree creation attempt ${attempts + 1} failed for ${repoFullName} on branch ${defaultBranch}: ${JSON.stringify(treeData)}. Retrying...`, 'warn');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        attempts++;
+      }
+      
+      if (!treeData || !treeData.sha) {
+        addLog(`Failed to create tree: ${treeData?.message || 'Unknown error'}`, 'error');
+        throw new Error(`Failed to create tree: ${treeData?.message || 'Unknown error'}`);
+      }
+
+      // 5. Create a new Commit
+      addLog(`Creating commit on tree: ${treeData.sha} | Parent: ${latestCommitSha || 'None'}`);
+      const commitBody: any = {
+        message: commitMessage || 'Deploy game from Animato Studio',
+        tree: treeData.sha,
+        author: {
+          name: username || 'Animato User',
+          email: normalizedEmail
+        },
+        committer: {
+          name: username || 'Animato User',
+          email: normalizedEmail
+        }
+      };
+      if (latestCommitSha) commitBody.parents = [latestCommitSha];
+
+      const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/commits`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(commitBody)
+      });
+      const commitData = await commitRes.json();
+      if (!commitRes.ok) {
+        addLog(`Failed to create commit: ${commitData.message}`, 'error');
+        throw new Error(commitData.message || 'Failed to create commit');
+      }
+      addLog(`Commit created successfully: ${commitData.sha}`);
+
+      // 6. Update or create the branch reference
+      addLog(`Updating ref refs/heads/${defaultBranch} to point to ${commitData.sha}`);
+      let refRes: Response;
+      if (isRepoEmpty) {
+        addLog('Creating initial branch ref...');
+        refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            content: Buffer.from(file.content).toString('base64'),
-            encoding: 'base64'
+            ref: `refs/heads/${defaultBranch}`,
+            sha: commitData.sha
           })
         });
-        const blobData = await blobRes.json();
-        if (blobRes.ok) {
-          blobSha = blobData.sha;
-          addLog(`Successfully created blob for ${file.path}: ${blobSha}`);
-          break;
-        }
-        addLog(`Blob creation failed for ${file.path}, attempt ${blobAttempts + 1}: ${blobData.message} (Status: ${blobRes.status})`, 'warn');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        blobAttempts++;
+      } else {
+        addLog('Updating existing branch ref...');
+        refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            sha: commitData.sha,
+            force: false
+          })
+        });
       }
-
-      if (!blobSha) {
-        addLog(`Failed to create blob for ${file.path}`, 'error');
-        throw new Error(`Failed to create blob for ${file.path}`);
+      const refData = await refRes.json();
+      if (!refRes.ok) {
+        addLog(`Failed to update ref: ${refData.message}`, 'error');
+        throw new Error(refData.message || 'Failed to update ref');
       }
-
-      treeItems.push({
-        path: file.path,
-        mode: '100644',
-        type: 'blob',
-        sha: blobSha
-      });
-    }
-
-    // Give GitHub a moment to index the blobs
-    addLog('Waiting for GitHub indexing (3s)...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // 4. Create a new Tree
-    addLog(`Creating tree for: ${repoFullName} | Base Tree: ${baseTreeSha || 'None (Initial)'}`);
-    
-    let treeData: any;
-    attempts = 0;
-    while (attempts < 5) {
-      const treeBody: any = { tree: treeItems };
-      if (baseTreeSha && !isRepoEmpty) {
-        treeBody.base_tree = baseTreeSha;
-      }
-
-      const treeRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(treeBody)
-      });
-      treeData = await treeRes.json();
       
-      if (treeRes.ok) {
-        addLog(`Tree created successfully: ${treeData.sha}`);
-        break;
-      }
-
-      // Special case: if 404 and we sent a base_tree, try one last time WITHOUT base_tree
-      if (treeRes.status === 404 && treeBody.base_tree) {
-         addLog(`Tree creation failed with 404 (possibly invalid base_tree). Retrying WITHOUT base_tree...`, 'warn');
-         const retryRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/trees`, {
-           method: 'POST',
-           headers,
-           body: JSON.stringify({ tree: treeItems })
-         });
-         const retryData = await retryRes.json();
-         if (retryRes.ok) {
-           treeData = retryData;
-           addLog(`Tree created successfully (after 404 fallback): ${treeData.sha}`);
-           break;
-         }
-      }
-
-      addLog(`Tree creation attempt ${attempts + 1} failed for ${repoFullName} on branch ${defaultBranch}: ${JSON.stringify(treeData)}. Retrying...`, 'warn');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      attempts++;
-    }
-    if (!treeData || !treeData.sha) {
-      addLog(`Failed to create tree: ${treeData?.message || 'Unknown error'}`, 'error');
-      throw new Error(`Failed to create tree: ${treeData?.message || 'Unknown error'}`);
-    }
-
-    // 5. Create a new Commit
-    addLog(`Creating commit on tree: ${treeData.sha} | Parent: ${latestCommitSha || 'None'}`);
-    const commitBody: any = {
-      message: commitMessage || 'Deploy game from Animato Studio',
-      tree: treeData.sha,
-      author: {
-        name: username || 'Animato User',
-        email: normalizedEmail
-      },
-      committer: {
-        name: username || 'Animato User',
-        email: normalizedEmail
-      }
-    };
-    if (latestCommitSha) commitBody.parents = [latestCommitSha];
-
-    const commitRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/commits`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(commitBody)
-    });
-    const commitData = await commitRes.json();
-    if (!commitRes.ok) {
-      addLog(`Failed to create commit: ${commitData.message}`, 'error');
-      throw new Error(commitData.message || 'Failed to create commit');
-    }
-    addLog(`Commit created successfully: ${commitData.sha}`);
-
-    // 6. Update or create the branch reference
-    addLog(`Updating ref refs/heads/${defaultBranch} to point to ${commitData.sha}`);
-    let refRes: Response;
-    if (isRepoEmpty) {
-      addLog('Creating initial branch ref...');
-      refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          ref: `refs/heads/${defaultBranch}`,
-          sha: commitData.sha
-        })
-      });
-    } else {
-      addLog('Updating existing branch ref...');
-      refRes = await fetch(`https://api.github.com/repos/${repoFullName}/git/refs/heads/${defaultBranch}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({
-          sha: commitData.sha,
-          force: false
-        })
-      });
-    }
-    const refData = await refRes.json();
-    if (!refRes.ok) {
-      addLog(`Failed to update ref: ${refData.message}`, 'error');
-      throw new Error(refData.message || 'Failed to update ref');
+      finalCommitSha = commitData.sha;
     }
 
     addLog('Deployment completed successfully!');
     res.json({ 
       success: true, 
-      commitSha: commitData.sha, 
+      commitSha: finalCommitSha, 
       pagesUrl: hasWorkflowScope ? `https://${repoInfo.owner.login}.github.io/${repoInfo.name}/` : null,
       repoUrl: repoInfo.html_url || `https://github.com/${repoFullName}`,
       logs 

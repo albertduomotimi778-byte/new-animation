@@ -172,15 +172,15 @@ export const ReloadPrompt = ({ onUpdate }: { onUpdate?: () => Promise<void> | vo
         }
 
         try {
-            // updateServiceWorker with false avoids full page reload, but installs and activates
-            await updateServiceWorker(false);
+            // updateServiceWorker with true forces a full page reload, installing and activating
+            await updateServiceWorker(true);
         } catch(e) {
             console.error("SW Update fail", e);
         }
 
         setIsUpdating(false);
         setUpdateSuccess(true);
-        localStorage.setItem('pwa_app_updated', 'true');
+        localStorage.setItem('pwa_just_updated', 'true');
         localStorage.setItem('app_version', 'v1.0.5');
 
         // Dispatch custom event to notify Hub / Profile and other parts of the app

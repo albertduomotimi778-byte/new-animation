@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => {
           workbox: {
             maximumFileSizeToCacheInBytes: 5242880, // 5MB instead of 40MB
             globPatterns: ['**/*.{js,css,html,ico,png,json}'], // removed binary model extensions
+            globIgnores: ['**/ort*'],
             navigateFallback: '/index.html',
             navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
             runtimeCaching: [
