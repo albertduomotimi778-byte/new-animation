@@ -68,7 +68,7 @@
       "name": "Base Layer"
     }
   ],
-  "stageBgColor": "#111111",
+  "stageBgColor": "#e91010",
   "aspectRatio": "landscape",
   "activeSceneId": "scene_1",
   "VIRTUAL_WIDTH": 640,
