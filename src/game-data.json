@@ -1,30 +1,18 @@
 {
   "scenes": [
     {
-      "id": "scene_1",
-      "name": "Scene 1"
+      "name": "Scene 1",
+      "id": "scene_1"
     }
   ],
   "sceneElements": {
     "scene_1": [
       {
-        "id": "el_1783438991969",
-        "type": "btn",
-        "buttonId": "btn_left",
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
-        "url": null,
-        "x": 471,
-        "y": 171,
-        "width": 50,
-        "height": 50,
-        "layerId": "layer_1"
-      },
-      {
-        "id": "el_1783439024987",
+        "id": "el_1783440115475",
         "type": "obj",
-        "data": "obj_1783439000020",
-        "x": 396,
-        "y": 161,
+        "data": "obj_1783440071180",
+        "x": 204,
+        "y": 50,
         "width": 80,
         "height": 80,
         "layerId": "layer_1"
@@ -34,26 +22,15 @@
   "sceneEvents": {
     "scene_1": [
       {
-        "conditions": [
-          {
-            "type": "pressed",
-            "target": "el_1783438991969"
-          }
-        ],
-        "actions": [
-          {
-            "type": "move_to",
-            "x": "20",
-            "target": "obj_1783439000020"
-          }
-        ],
-        "id": "ev_1"
+        "conditions": [],
+        "id": "ev_1",
+        "actions": []
       }
     ]
   },
   "gameObjects": [
     {
-      "id": "obj_1783439000020",
+      "id": "obj_1783440071180",
       "name": "New Character",
       "type": "character",
       "animations": [
@@ -73,27 +50,27 @@
     {
       "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
       "name": "Left Button",
-      "type": "shape",
-      "id": "btn_left"
+      "id": "btn_left",
+      "type": "shape"
     },
     {
       "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-      "type": "shape",
       "name": "Right Button",
-      "id": "btn_right"
+      "id": "btn_right",
+      "type": "shape"
     },
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png",
       "type": "shape",
       "name": "Jump Button",
-      "id": "btn_jump"
+      "id": "btn_jump",
+      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png"
     }
   ],
   "environments": [],
   "layers": [
     {
-      "id": "layer_1",
-      "name": "Base Layer"
+      "name": "Base Layer",
+      "id": "layer_1"
     }
   ],
   "stageBgColor": "#18e1b0",
