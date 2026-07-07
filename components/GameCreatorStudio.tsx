@@ -490,6 +490,7 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
         break;
 
       case 'js':
+        console.log("Executing custom JS action in preview:", act.code);
         if (act.code) {
           try {
             const runUserCode = new Function(
@@ -501,8 +502,24 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
               'activeLayerId', 'setActiveLayerId',
               act.code
             );
+
+            // Wrap setStageElements to force shallow array reference copies
+            // This guarantees React detects updates and re-renders with zero-delay
+            const customSetStageElements = (newVal: any) => {
+              if (typeof newVal === 'function') {
+                setStageElements(prev => {
+                  const updated = newVal(prev);
+                  return Array.isArray(updated) ? [...updated] : updated;
+                });
+              } else {
+                setStageElements(Array.isArray(newVal) ? [...newVal] : newVal);
+              }
+            };
+
+            // Pass stageElementsRef.current (always absolute latest value)
+            // to runUserCode, ensuring zero stale data delay or overwriting
             runUserCode(
-              stageElements, setStageElements, 
+              stageElementsRef.current, customSetStageElements, 
               activeSceneId, handleSwitchScene,
               events, setEvents,
               gameObjects, setGameObjects,
@@ -538,11 +555,11 @@ export const GameCreatorStudio: React.FC<GameCreatorStudioProps> = ({
   const handleButtonClickInPreview = (buttonId: string) => {
     if (!buttonId) return;
     console.log("Button clicked in preview:", buttonId);
-    const btnEl = stageElements.find(e => e.id === buttonId);
-    events.forEach(ev => {
+    const btnEl = stageElementsRef.current.find(e => e.id === buttonId);
+    eventsRef.current.forEach(ev => {
       const isPressed = ev.conditions.some(cond => 
         (cond.type === 'pressed' || cond.type === 'pressed_time' || cond.type === 'double_tap' || cond.type === 'click') && 
-        (cond.target === buttonId || (btnEl?.buttonId && cond.target === btnEl.buttonId))
+        (cond.target === buttonId || (btnEl?.buttonId && cond.target === btnEl.buttonId) || (btnEl?.data && cond.target === btnEl.data))
       );
       if (isPressed) {
         console.log("Triggering actions for event:", ev.name);

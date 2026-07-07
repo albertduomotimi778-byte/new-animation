@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Github, X, Check, Loader2, ExternalLink, Globe, Lock, AlertCircle } from 'lucide-react';
+import { Github, X, Check, Loader2, ExternalLink, Globe, Lock, AlertCircle, RotateCw, Smartphone, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { processGameDataAssets } from '../utils/exportUtils';
 
@@ -28,6 +28,8 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
   const [repoFullName, setRepoFullName] = useState<string | null>(null);
   const [repoExists, setRepoExists] = useState(false);
   const [permissions, setPermissions] = useState<{ valid: boolean, errors: string[] } | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [iframeLoading, setIframeLoading] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,6 +41,7 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
       setRepoExists(false);
       setRepoFullName(null);
       setPermissions(null);
+      setPreviewUrl('');
     }
   }, [isOpen, projectName]);
 
@@ -330,24 +333,26 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                   <div className="space-y-3 w-full">
                     {deployedUrl && (
                       <a 
-                        href={deployedUrl} 
+                        href={`${deployedUrl}?t=${Date.now()}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all text-sm"
+                        className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all text-sm shadow-lg shadow-purple-950/30"
                       >
-                        <Globe size={18} />
-                        View Live Site (Pages)
+                        <ExternalLink size={18} />
+                        Open GitHub Pages
                       </a>
                     )}
-                    <a 
-                      href={`https://github.com/${repoFullName}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all text-sm"
-                    >
-                      <Github size={18} />
-                      View GitHub Repository
-                    </a>
+                    {repoFullName && (
+                      <a 
+                        href={`https://github.com/${repoFullName}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-xl transition-all text-sm"
+                      >
+                        <Github size={18} />
+                        View Repository
+                      </a>
+                    )}
                   </div>
                   <button 
                     onClick={onClose}
