@@ -1,71 +1,48 @@
 {
   "scenes": [
     {
-      "name": "Scene 1",
-      "id": "scene_1"
+      "id": "scene_1",
+      "name": "Scene 1"
     }
   ],
   "sceneElements": {
-    "scene_1": [
-      {
-        "buttonId": "btn_right",
-        "type": "btn",
-        "height": 50,
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-        "y": 196,
-        "layerId": "layer_1",
-        "x": 406,
-        "id": "el_1783399496429",
-        "width": 50,
-        "url": null
-      }
-    ]
+    "scene_1": []
   },
   "sceneEvents": {
     "scene_1": [
       {
-        "actions": [
-          {
-            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });",
-            "type": "js"
-          }
-        ],
         "id": "ev_1",
-        "conditions": [
-          {
-            "type": "pressed",
-            "target": "el_1783399496429"
-          }
-        ]
+        "conditions": [],
+        "actions": []
       }
     ]
   },
   "gameObjects": [],
   "uiButtons": [
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
       "id": "btn_left",
+      "name": "Left Button",
       "type": "shape",
-      "name": "Left Button"
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png"
     },
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
       "id": "btn_right",
+      "name": "Right Button",
       "type": "shape",
-      "name": "Right Button"
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png"
     },
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png",
-      "type": "shape",
       "id": "btn_jump",
-      "name": "Jump Button"
+      "name": "Jump Button",
+      "type": "shape",
+      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png"
     }
   ],
   "environments": [],
   "layers": [
     {
-      "name": "Base Layer",
-      "id": "layer_1"
+      "id": "layer_1",
+      "name": "Base Layer"
     }
   ],
   "stageBgColor": "#111111",
