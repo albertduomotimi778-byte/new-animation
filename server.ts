@@ -1973,7 +1973,7 @@ app.post('/api/github/deploy', async (req, res) => {
       return res.status(401).json({ error: 'GitHub not connected' });
     }
     
-    const { access_token } = docSnap.data();
+    const { access_token, username } = docSnap.data();
     const headers = {
       'Authorization': `Bearer ${access_token}`,
       'Accept': 'application/vnd.github+json',
@@ -2017,6 +2017,16 @@ app.post('/api/github/deploy', async (req, res) => {
     
     const defaultBranch = repoInfo.default_branch || 'main';
     addLog(`Resolved default branch for ${repoFullName}: ${defaultBranch}`);
+    
+    // Check scopes for 'workflow'
+    let hasWorkflowScope = false;
+    const scopesHeader = repoRes.headers?.get('x-oauth-scopes') || '';
+    addLog(`Token scopes: ${scopesHeader || 'none'}`);
+    if (scopesHeader.includes('workflow')) {
+      hasWorkflowScope = true;
+    } else {
+      addLog(`Token lacks 'workflow' scope. We will skip creating .github/workflows/deploy.yml to prevent 404 errors.`, 'warn');
+    }
     
     let latestCommitSha: string | null = null;
     let baseTreeSha: string | null = null;
@@ -2104,6 +2114,14 @@ app.post('/api/github/deploy', async (req, res) => {
         content: `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  margin: 0;\n  background-color: #000;\n  color: #fff;\n  overflow: hidden;\n}`
       },
       {
+        path: 'tailwind.config.js',
+        content: `/** @type {import('tailwindcss').Config} */\nmodule.exports = {\n  content: [\n    "./index.html",\n    "./src/**/*.{js,ts,jsx,tsx}",\n  ],\n  theme: {\n    extend: {},\n  },\n  plugins: [],\n}`
+      },
+      {
+        path: 'postcss.config.js',
+        content: `export default {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n}`
+      },
+      {
         path: 'src/game-data.json',
         content: JSON.stringify(gameData, null, 2)
       },
@@ -2112,14 +2130,23 @@ app.post('/api/github/deploy', async (req, res) => {
         content: `import React, { useState, useEffect } from 'react';\nimport gameData from './game-data.json';\n\nexport default function GameRunner() {\n  const [activeSceneId, setActiveSceneId] = useState(gameData.activeSceneId || 'scene_1');\n  const [stageElements, setStageElements] = useState([]);\n  \n  useEffect(() => {\n    const sceneEls = gameData.sceneElements[activeSceneId] || [];\n    setStageElements(sceneEls);\n  }, [activeSceneId]);\n\n  return (\n    <div style={{ backgroundColor: gameData.stageBgColor, width: '100vw', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>\n      <div style={{ position: 'relative', width: 640, height: 360, backgroundColor: gameData.stageBgColor }}>\n        {stageElements.map(el => (\n           <div key={el.id} style={{ position: 'absolute', left: el.x, top: el.y, width: el.width, height: el.height, backgroundImage: el.url ? \`url(\${el.url})\` : undefined, backgroundSize: '100% 100%' }}>\n             {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none'}}>{el.text}</button>}\n           </div>\n        ))}\n      </div>\n    </div>\n  );\n}`
       },
       {
-        path: '.github/workflows/deploy.yml',
-        content: `name: Deploy to GitHub Pages\non:\n  push:\n    branches: [ ${defaultBranch} ]\npermissions:\n  contents: read\n  pages: write\n  id-token: write\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n      - run: npm install\n      - run: npm run build\n      - uses: actions/upload-pages-artifact@v3\n        with:\n          path: './dist'\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: \${{ steps.deployment.outputs.page_url }}\n    steps:\n      - id: deployment\n        uses: actions/deploy-pages@v4`
-      },
-      {
         path: 'README.md',
         content: `# ${repoInfo.name}\n\nProfessional game project created with Animato Studio.\n\n## Development\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\n## Deployment\n\nThis project is automatically deployed to GitHub Pages via GitHub Actions.`
+      },
+      {
+        path: 'vercel.json',
+        content: `{\n  "framework": "vite",\n  "buildCommand": "npm run build",\n  "outputDirectory": "dist"\n}`
       }
     ];
+    
+    if (hasWorkflowScope) {
+      files.push({
+        path: '.github/workflows/deploy.yml',
+        content: `name: Deploy to GitHub Pages\non:\n  push:\n    branches: [ ${defaultBranch} ]\npermissions:\n  contents: read\n  pages: write\n  id-token: write\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n      - run: npm install\n      - run: npm run build\n      - uses: actions/upload-pages-artifact@v3\n        with:\n          path: './dist'\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: \${{ steps.deployment.outputs.page_url }}\n    steps:\n      - id: deployment\n        uses: actions/deploy-pages@v4`
+      });
+    } else {
+      addLog("Skipping .github/workflows/deploy.yml because the GitHub token lacks the 'workflow' scope. Deployment to Pages will require manual setup.");
+    }
     
     const treeItems = [];
     for (const file of files) {
@@ -2215,7 +2242,15 @@ app.post('/api/github/deploy', async (req, res) => {
     addLog(`Creating commit on tree: ${treeData.sha} | Parent: ${latestCommitSha || 'None'}`);
     const commitBody: any = {
       message: commitMessage || 'Deploy game from Animato Studio',
-      tree: treeData.sha
+      tree: treeData.sha,
+      author: {
+        name: username || 'Animato User',
+        email: normalizedEmail
+      },
+      committer: {
+        name: username || 'Animato User',
+        email: normalizedEmail
+      }
     };
     if (latestCommitSha) commitBody.parents = [latestCommitSha];
 
@@ -2265,7 +2300,8 @@ app.post('/api/github/deploy', async (req, res) => {
     res.json({ 
       success: true, 
       commitSha: commitData.sha, 
-      pagesUrl: `https://${repoInfo.owner.login}.github.io/${repoInfo.name}/`,
+      pagesUrl: hasWorkflowScope ? `https://${repoInfo.owner.login}.github.io/${repoInfo.name}/` : null,
+      repoUrl: repoInfo.html_url || `https://github.com/${repoFullName}`,
       logs 
     });
   } catch (err: any) {

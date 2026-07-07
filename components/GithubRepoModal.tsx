@@ -195,15 +195,43 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
             )}
 
             {status === 'success' && (
-              <div className="py-8 flex flex-col items-center text-center space-y-6">
-                <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center">
-                  <Check size={40} />
+              <div className="py-6 flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center">
+                  <Check size={32} />
                 </div>
-                <div>
-                  <h4 className="text-2xl font-bold text-white mb-2">Successfully Deployed!</h4>
-                  <p className="text-gray-500 text-sm max-w-sm mb-8">
-                    Your repository has been created and files have been pushed. GitHub Actions will now build and deploy your game.
-                  </p>
+                <div className="w-full space-y-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-white mb-2">Successfully Pushed!</h4>
+                    <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4 bg-white/5 p-3 rounded-xl border border-white/10 text-left">
+                      <strong>Vercel users:</strong> Your app will auto-deploy shortly.<br/>
+                      {deployedUrl ? (
+                        <><strong>GitHub Pages:</strong> It may take 1-3 minutes for the site to become available. If you see a 404, please wait and refresh.</>
+                      ) : (
+                        <><strong>GitHub Pages:</strong> Skipped because your token lacks 'workflow' scope. Deploy via Vercel or Netlify instead.</>
+                      )}
+                    </p>
+                  </div>
+
+                  {logs.length > 0 && (
+                    <div className="w-full space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Deployment Logs</span>
+                        <button 
+                          onClick={copyLogs}
+                          className="text-[10px] font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest flex items-center gap-1 transition-colors"
+                        >
+                          Copy All Logs
+                        </button>
+                      </div>
+                      <div className="w-full h-24 bg-black/60 border border-white/5 rounded-xl p-3 overflow-y-auto text-left font-mono text-[10px] space-y-1 custom-scrollbar">
+                        {logs.map((log, i) => (
+                          <div key={i} className={`${log.includes('error') ? 'text-red-400' : log.includes('warn') ? 'text-amber-400' : 'text-gray-400'}`}>
+                            {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="space-y-3 w-full">
                     {deployedUrl && (
@@ -211,28 +239,28 @@ export const GithubRepoModal: React.FC<GithubRepoModalProps> = ({
                         href={deployedUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all"
+                        className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all text-sm"
                       >
                         <Globe size={18} />
-                        View Live Site
+                        View Live Site (Pages)
                       </a>
                     )}
                     <a 
                       href={`https://github.com/${repoFullName}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all"
+                      className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-all text-sm"
                     >
                       <Github size={18} />
-                      View Repository
+                      View GitHub Repository
                     </a>
-                    <button 
-                      onClick={onClose}
-                      className="w-full text-gray-500 hover:text-white text-sm font-medium py-2 transition-colors"
-                    >
-                      Close Window
-                    </button>
                   </div>
+                  <button 
+                    onClick={onClose}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-gray-400 font-bold py-3 rounded-xl transition-all text-sm"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             )}
