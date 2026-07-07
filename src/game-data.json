@@ -74,8 +74,8 @@
     }
   ],
   "stageBgColor": "#18e1b0",
-  "aspectRatio": "landscape",
+  "aspectRatio": "portrait",
   "activeSceneId": "scene_1",
-  "VIRTUAL_WIDTH": 640,
-  "VIRTUAL_HEIGHT": 360
+  "VIRTUAL_WIDTH": 360,
+  "VIRTUAL_HEIGHT": 640
 }
