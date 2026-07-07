@@ -55,13 +55,7 @@ export default function GameRunner() {
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-    const mql = window.matchMedia('(orientation: landscape)');
-    const mqlListener = () => handleResize();
-    try { mql.addEventListener('change', mqlListener); } catch(e) { window.addEventListener('orientationchange', mqlListener); }
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      try { mql.removeEventListener('change', mqlListener); } catch(e) { window.removeEventListener('orientationchange', mqlListener); }
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, [aspectRatio]);
 
   const scale = (() => {
@@ -239,7 +233,7 @@ export default function GameRunner() {
               activeSceneId, (sceneId) => {
                 setActiveSceneId(sceneId);
               },
-              [], () => {},
+              gameData.sceneEvents[activeSceneId] || [], () => {},
               gameData.gameObjects || [], () => {},
               gameData.layers || [], () => {},
               '', () => {}
@@ -357,15 +351,15 @@ export default function GameRunner() {
       <div 
         style={{ 
           position: 'relative', 
-          width: `${VIRTUAL_WIDTH}px`,
-          height: `${VIRTUAL_HEIGHT}px`,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center',
+          width: `${VIRTUAL_WIDTH}px`, 
+          height: `${VIRTUAL_HEIGHT}px`, 
+          transform: `scale(${scale})`, 
+          transformOrigin: 'center', 
           backgroundColor: gameData.stageBgColor || '#000', 
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          borderRadius: aspectRatio === 'portrait' ? '32px' : '12px',
-          border: aspectRatio === 'portrait' ? '12px solid #27272a' : '2px solid rgba(255,255,255,0.05)',
+          overflow: 'hidden', 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', 
+          borderRadius: aspectRatio === 'portrait' ? '32px' : '12px', 
+          border: aspectRatio === 'portrait' ? '12px solid #27272a' : '2px solid rgba(255,255,255,0.05)', 
         }}
       >
         {stageElements.map((el, i) => {
@@ -375,12 +369,10 @@ export default function GameRunner() {
            const isText = gameObject?.type === 'text';
            const bgUrl = el.url || (isObj ? (gameObject?.url || gameObject?.animations?.[0]) : el.data);
            const firstAnim = gameObject?.animations?.[0];
-
            const layers = gameData.layers || [];
            const layerIdx = layers.findIndex(l => l.id === el.layerId);
            const layerZ = layerIdx === -1 ? 10 : (layers.length - layerIdx) * 10;
            const finalZ = isText ? layerZ + 2000 : layerZ;
-
            const isInteractive = isButton || el.type === 'obj' || el.type === 'enemy';
            return (
              <div 
@@ -398,35 +390,35 @@ export default function GameRunner() {
                  width: el.type === 'bg' ? '100%' : el.width, 
                  height: el.type === 'bg' ? '100%' : el.height, 
                  backgroundImage: (!isText && bgUrl) ? `url(${bgUrl})` : undefined, 
-                 backgroundSize: '100% 100%',
-                 backgroundRepeat: 'no-repeat',
-                 backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined,
-                 opacity: el.opacity !== undefined ? el.opacity : 1,
-                 transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-                 cursor: isInteractive ? 'pointer' : 'default',
-                 pointerEvents: isInteractive ? 'auto' : 'none',
-                 zIndex: el.type === 'bg' ? 0 : finalZ
+                 backgroundSize: '100% 100%', 
+                 backgroundRepeat: 'no-repeat', 
+                 backgroundColor: (!bgUrl && el.type === 'btn') ? 'rgba(236,72,153,0.2)' : undefined, 
+                 opacity: el.opacity !== undefined ? el.opacity : 1, 
+                 transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined, 
+                 cursor: isInteractive ? 'pointer' : 'default', 
+                 pointerEvents: isInteractive ? 'auto' : 'none', 
+                 zIndex: el.type === 'bg' ? 0 : finalZ 
                }}
              >
                {el.type === 'btn' && <button style={{width:'100%',height:'100%',background:'transparent',border:'none', cursor: 'pointer', color: 'white', fontWeight: 'bold'}}>{el.text}</button>}
                {el.type === 'obj' && gameObject?.type === 'text' ? (
                  <div 
                    style={{
-                     width: '100%',
-                     height: '100%',
-                     display: 'flex',
-                     alignItems: 'center',
-                     justifyContent: gameObject.align === 'left' ? 'flex-start' : gameObject.align === 'right' ? 'flex-end' : 'center',
-                     textAlign: gameObject.align ?? 'center',
-                     fontSize: `${gameObject.fontSize ?? 24}px`,
-                     color: gameObject.color ?? '#ffffff',
-                     fontFamily: gameObject.fontFamily ?? 'Inter, sans-serif',
-                     fontWeight: gameObject.bold !== false ? 'bold' : 'normal',
-                     fontStyle: gameObject.italic ? 'italic' : 'normal',
-                     lineHeight: 1.2,
-                     wordBreak: 'break-word',
-                     overflow: 'visible',
-                     padding: '4px'
+                     width: '100%', 
+                     height: '100%', 
+                     display: 'flex', 
+                     alignItems: 'center', 
+                     justifyContent: gameObject.align === 'left' ? 'flex-start' : gameObject.align === 'right' ? 'flex-end' : 'center', 
+                     textAlign: gameObject.align ?? 'center', 
+                     fontSize: `${gameObject.fontSize ?? 24}px`, 
+                     color: gameObject.color ?? '#ffffff', 
+                     fontFamily: gameObject.fontFamily ?? 'Inter, sans-serif', 
+                     fontWeight: gameObject.bold !== false ? 'bold' : 'normal', 
+                     fontStyle: gameObject.italic ? 'italic' : 'normal', 
+                     lineHeight: 1.2, 
+                     wordBreak: 'break-word', 
+                     overflow: 'visible', 
+                     padding: '4px' 
                    }}
                  >
                    {gameObject.textContent ?? gameObject.name ?? 'Text'}
@@ -449,7 +441,7 @@ export default function GameRunner() {
       </div>
       {showRotationPrompt && (
         <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(10,10,12,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'spin 4s linear infinite' }}>🔄</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔄</div>
           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>Please Rotate Your Device</h2>
           <p style={{ color: '#a1a1aa', fontSize: '14px', maxWidth: '300px', marginBottom: '24px' }}>This game is designed for {aspectRatio} screen layout. Please rotate your screen for the best experience.</p>
           <button onClick={() => setShowRotationPrompt(false)} style={{ backgroundColor: '#fff', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>Play Anyway</button>
