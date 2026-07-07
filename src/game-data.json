@@ -6,37 +6,14 @@
     }
   ],
   "sceneElements": {
-    "scene_1": [
-      {
-        "id": "el_1783427385473",
-        "type": "btn",
-        "buttonId": "btn_right",
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-        "url": null,
-        "x": 50,
-        "y": 50,
-        "width": 50,
-        "height": 50,
-        "layerId": "layer_1"
-      }
-    ]
+    "scene_1": []
   },
   "sceneEvents": {
     "scene_1": [
       {
         "id": "ev_1",
-        "conditions": [
-          {
-            "type": "pressed",
-            "target": "el_1783427385473"
-          }
-        ],
-        "actions": [
-          {
-            "type": "js",
-            "code": "const input = document.createElement(\"input\");\ninput.type = \"file\";\ninput.accept = \"audio/*\";\n\ninput.addEventListener(\"change\", () => {\n    const file = input.files[0];\n    if (!file) return;\n\n    const audio = new Audio(URL.createObjectURL(file));\n    audio.play();\n});\n\n// Opens the file picker whenever the user clicks anywhere on the page.\ndocument.addEventListener(\"click\", () => {\n    input.click();\n}, { once: true });"
-          }
-        ]
+        "conditions": [],
+        "actions": []
       }
     ]
   },
@@ -68,7 +45,7 @@
       "name": "Base Layer"
     }
   ],
-  "stageBgColor": "#e91010",
+  "stageBgColor": "#111111",
   "aspectRatio": "landscape",
   "activeSceneId": "scene_1",
   "VIRTUAL_WIDTH": 640,
