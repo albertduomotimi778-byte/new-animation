@@ -46,6 +46,14 @@ jobs:
         run: |
           ls -la
           test -f android.keystore && echo "Keystore exists!"
+      - name: Generate Checksum and Update Project
+        run: |
+          # Calculate twa-manifest.json's SHA-1 hash and write to manifest-checksum.txt
+          # This prevents the interactive "No checksum file was found... would you like to regenerate your project?" prompt
+          sha1sum twa-manifest.json | cut -d' ' -f1 > manifest-checksum.txt
+          echo "Generated manifest-checksum.txt with content: $(cat manifest-checksum.txt)"
+          # Run bubblewrap update to generate/update the native Android project structure non-interactively
+          bubblewrap update --skipVersionUpgrade
       - name: Build APK
         run: |
           bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
