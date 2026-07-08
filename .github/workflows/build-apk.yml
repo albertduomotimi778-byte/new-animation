@@ -28,6 +28,17 @@ jobs:
           echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
+      - name: Configure Bubblewrap
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat <<EOF > ~/.bubblewrap/config.json
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
+          echo "Bubblewrap configuration initialized successfully:"
+          cat ~/.bubblewrap/config.json
       - name: Generate Keystore
         run: |
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Animato, OU=Studio, O=Animato, L=Cloud, S=Cloud, C=US"
@@ -37,7 +48,7 @@ jobs:
           test -f android.keystore && echo "Keystore exists!"
       - name: Build APK
         run: |
-          printf 'no\n' | bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
+          bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
       - name: Rename APK
         run: |
           mv *.apk game-release.apk
