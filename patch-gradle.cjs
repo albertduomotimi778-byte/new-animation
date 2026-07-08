@@ -36,5 +36,8 @@ if (!/buildTypes\s*\{\s*release\s*\{/.test(content)) {
 // 2. Inject signingConfig inside the release buildTypes block
 content = content.replace(/buildTypes\s*\{\s*release\s*\{/, "buildTypes {\n        release {\n            signingConfig signingConfigs.release");
 
+// 3. Resolve Kotlin stdlib duplicate classes by forcing consistent versions (e.g., 1.8.22)
+content += `\n\nconfigurations.all {\n    resolutionStrategy {\n        force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"\n        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"\n        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"\n    }\n}\n`;
+
 fs.writeFileSync(gradlePath, content, 'utf8');
 console.log("Successfully patched build.gradle with signing config!");
