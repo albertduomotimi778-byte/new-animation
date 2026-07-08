@@ -1,32 +1,32 @@
 {
   "scenes": [
     {
-      "id": "scene_1",
-      "name": "Scene 1"
+      "name": "Scene 1",
+      "id": "scene_1"
     }
   ],
   "sceneElements": {
     "scene_1": [
       {
-        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-        "y": 145,
-        "x": 306,
-        "layerId": "layer_1",
-        "url": null,
-        "id": "el_1783485397905",
-        "width": 50,
-        "buttonId": "btn_right",
         "height": 50,
-        "type": "btn"
+        "url": null,
+        "buttonId": "btn_right",
+        "width": 50,
+        "x": 306,
+        "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+        "type": "btn",
+        "layerId": "layer_1",
+        "y": 145,
+        "id": "el_1783485397905"
       },
       {
-        "y": 50,
-        "layerId": "layer_1",
-        "x": 50,
-        "id": "el_1783485455138",
         "type": "obj",
-        "width": 80,
         "height": 80,
+        "width": 80,
+        "x": 50,
+        "layerId": "layer_1",
+        "y": 50,
+        "id": "el_1783485455138",
         "data": "obj_1783485422373"
       }
     ]
@@ -35,15 +35,15 @@
     "scene_1": [
       {
         "id": "ev_1",
-        "actions": [
-          {
-            "type": "change_opacity"
-          }
-        ],
         "conditions": [
           {
             "target": "el_1783485397905",
             "type": "pressed"
+          }
+        ],
+        "actions": [
+          {
+            "type": "change_opacity"
           }
         ]
       }
@@ -51,6 +51,8 @@
   },
   "gameObjects": [
     {
+      "name": "New Character",
+      "type": "character",
       "animations": [
         {
           "fps": 12,
@@ -62,29 +64,27 @@
           ]
         }
       ],
-      "id": "obj_1783485422373",
-      "name": "New Character",
-      "type": "character"
+      "id": "obj_1783485422373"
     }
   ],
   "uiButtons": [
     {
       "data": "https://cdn-icons-png.flaticon.com/512/271/271220.png",
-      "name": "Left Button",
       "type": "shape",
+      "name": "Left Button",
       "id": "btn_left"
     },
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png",
-      "name": "Right Button",
       "type": "shape",
-      "id": "btn_right"
+      "name": "Right Button",
+      "id": "btn_right",
+      "data": "https://cdn-icons-png.flaticon.com/512/271/271228.png"
     },
     {
-      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png",
       "id": "btn_jump",
+      "name": "Jump Button",
       "type": "shape",
-      "name": "Jump Button"
+      "data": "https://cdn-icons-png.flaticon.com/512/359/359394.png"
     }
   ],
   "environments": [],
