@@ -1,0 +1,20 @@
+{
+  "packageId": "com.animato.newanimation",
+  "host": "albertduomotimi778-byte.github.io",
+  "name": "New Animation",
+  "launcherName": "New Animation",
+  "display": "standalone",
+  "themeColor": "#000000",
+  "navigationColor": "#000000",
+  "backgroundColor": "#000000",
+  "startUrl": "/",
+  "iconUrl": "https://albertduomotimi778-byte.github.io/new-animation//icon-512.png",
+  "maskableIconUrl": "https://albertduomotimi778-byte.github.io/new-animation//icon-512.png",
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "webManifestUrl": "https://albertduomotimi778-byte.github.io/new-animation//manifest.json",
+  "generatorApp": "bubblewrap-cli",
+  "orientation": "any"
+}
