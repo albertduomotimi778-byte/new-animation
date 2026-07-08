@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      CI: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,6 +17,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
       - name: Generate Keystore
@@ -22,7 +26,7 @@ jobs:
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Animato, OU=Studio, O=Animato, L=Cloud, S=Cloud, C=US"
       - name: Build APK
         run: |
-          bubblewrap build --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password
+          yes "" | bubblewrap build --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password
       - name: Rename APK
         run: |
           mv *.apk game-release.apk
