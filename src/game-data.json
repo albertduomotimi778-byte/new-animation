@@ -37,7 +37,9 @@
         "id": "ev_1",
         "actions": [
           {
-            "type": "change_opacity"
+            "type": "move_to",
+            "target": "obj_1783485422373",
+            "x": "50"
           }
         ],
         "conditions": [
