@@ -37,8 +37,7 @@ jobs:
           test -f android.keystore && echo "Keystore exists!"
       - name: Build APK
         run: |
-          printf 'no
-' | bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
+          printf 'no\n' | bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
       - name: Rename APK
         run: |
           mv *.apk game-release.apk
