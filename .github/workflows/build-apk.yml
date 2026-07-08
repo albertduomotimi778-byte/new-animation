@@ -26,40 +26,39 @@ jobs:
           java -version
           echo "ANDROID_HOME: $ANDROID_HOME"
           echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-      - name: Configure Bubblewrap
+      - name: Initialize Dummy Web Dir
         run: |
-          mkdir -p ~/.bubblewrap
-          cat <<EOF > ~/.bubblewrap/config.json
-          {
-            "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "$ANDROID_HOME"
-          }
-          EOF
-          echo "Bubblewrap configuration initialized successfully:"
-          cat ~/.bubblewrap/config.json
+          mkdir -p dist
+          echo "<html><body>Animato Studio</body></html>" > dist/index.html
+      - name: Install Capacitor CLI and Android Platform
+        run: |
+          npm install @capacitor/core @capacitor/android
+          npm install -D @capacitor/cli
+      - name: Create Android Project
+        run: |
+          npx cap add android
       - name: Generate Keystore
         run: |
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Animato, OU=Studio, O=Animato, L=Cloud, S=Cloud, C=US"
-      - name: Verify Keystore
+      - name: Patch build.gradle for Release Signing
         run: |
-          ls -la
-          test -f android.keystore && echo "Keystore exists!"
-      - name: Generate Checksum and Update Project
+          node patch-gradle.js
+      - name: Sync Capacitor
         run: |
-          # Calculate twa-manifest.json's SHA-1 hash and write to manifest-checksum.txt
-          # This prevents the interactive "No checksum file was found... would you like to regenerate your project?" prompt
-          sha1sum twa-manifest.json | cut -d' ' -f1 > manifest-checksum.txt
-          echo "Generated manifest-checksum.txt with content: $(cat manifest-checksum.txt)"
-          # Run bubblewrap update to generate/update the native Android project structure non-interactively
-          bubblewrap update --skipVersionUpgrade
-      - name: Build APK
+          npx cap sync android
+      - name: Build Signed APK
         run: |
-          bubblewrap build --manifest twa-manifest.json --signingKeyPath android.keystore --signingKeyAlias android --signingKeyPassword password --signingKeyKeyPassword password --skipPwaValidation
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
       - name: Rename APK
         run: |
-          mv *.apk game-release.apk
+          mv android/app/build/outputs/apk/release/app-release.apk game-release.apk
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-release-apk
+          path: game-release.apk
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
