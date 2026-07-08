@@ -47,6 +47,10 @@ jobs:
       - name: Patch build.gradle for Release Signing
         run: |
           node patch-gradle.cjs
+      - name: Debug build.gradle after Patch
+        run: |
+          echo "=== Content of android/app/build.gradle after patch ==="
+          cat android/app/build.gradle
       - name: Sync Capacitor
         run: |
           npx cap sync android
